@@ -194,6 +194,10 @@ class Personality(PersonalitySimple):
     def stateVendingComplete(self):
         if self.phENTER:
             self.logger.debug('VENDING COMPLETE Enter')
+            name = self.activeMemberRecord.name
+            amount = self.vendingAmount
+            o = { "Member":name,"Amount":amount,"Success":self.vendingStatus,"Reason":self.vendingResult}
+            self.app.mqtt.slotPublishSubtopic('vending/report', json.dumps(o))
             return self.goActive()
 
         elif self.phACTIVE:
