@@ -49,14 +49,18 @@ class Worker(QObject):
     parent = None
 
     def run(self):
-        """Long-running task."""
-        print ("START WORKER SLEEP")
-        time.sleep(1)
-        url = self.parent.app.config.value("Auth.VendingUrlPrefix")
-        username = self.parent.app.config.value("Auth.HttpAuthUser")
-        password = self.parent.app.config.value("Auth.HttpAuthPassword")
-        print ("VENDING URL UIS",url)
         try:
+          """Long-running task."""
+          print ("START WORKER SLEEP")
+          time.sleep(1)
+          url = self.parent.app.config.value("Auth.VendingUrlPrefix")
+          username = self.parent.app.config.value("Auth.HttpAuthUser")
+          password = self.parent.app.config.value("Auth.HttpAuthPassword")
+          name = self.parent.activeMemberRecord.name
+          tag = self.parent.activeMemberRecord.tag
+          amount = self.parent.vendingAmount*100
+          url = f"{url}/{name}/{amount:0.0f}"
+          print ("VENDING URL UIS",url,name,tag,amount)
           self.parent.vendingReason="Attempt"
           with requests.get(url, auth=(username, password)) as conn:
             print ("CONTENT GOT",conn.content)
