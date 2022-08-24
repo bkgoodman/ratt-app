@@ -48,13 +48,21 @@ class Personality(PersonalitySimple):
     PERSONALITY_DESCRIPTION = 'Vending'
     STATE_VENDING_LIST = 'VendingList'
     STATE_VENDING_CONFIRM = 'VendingConfirm'
+    STATE_VENDING_INPROGRESS = 'VendingInProgress'
+    STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
+    vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
+    _vendingResult = "Default"
+    _vendingStatus = False
 
     def __init__(self, *args, **kwargs):
         PersonalitySimple.__init__(self, *args, **kwargs)
         
         self.app.rootContext().setContextProperty("vendingAmount", 1)
         self.states[self.STATE_VENDING_LIST] = self.stateVendingList
+        self.states[self.STATE_VENDING_INPROGRESS] = self.stateVendingInProgress
+        self.states[self.STATE_VENDING_COMPLETE] = self.stateVendingComplete
+
 
     @pyqtProperty(float)
     def vendingAmount(self):
@@ -63,7 +71,24 @@ class Personality(PersonalitySimple):
     @vendingAmount.setter
     def vendingAmount(self, value):
         self._vendingAmount = value
-        #self.toolActiveFlagChanged.emit()
+
+    @pyqtProperty(bool)
+    def vendingStatus(self):
+        return self._vendingStatus
+
+    @vendingStatus.setter
+    def vendingStatus(self, value):
+        self._vendingStatus = value
+        self.vendingChanged.emit(self._vendingStatus,self._vendingResult)
+
+    @pyqtProperty(str, notify=vendingChanged)
+    def vendingResult(self):
+        return self._vendingResult
+
+    @vendingResult.setter
+    def vendingResult(self, value):
+        self._vendingResult = value
+        self.vendingChanged.emit(self._vendingStatus,self._vendingResult)
 
     # enable tool
     def enableTool(self):
@@ -78,6 +103,60 @@ class Personality(PersonalitySimple):
         self.pins_out[1].set(LOW)
 
 
+
+
+    #############################################
+    ## STATE_VENDING_INPROGRESS
+    #############################################
+    def stateVendingInProgress(self):
+        if self.phENTER:
+            self.logger.debug('VENDING INPROGRESS Enter')
+            return self.goActive()
+
+        elif self.phACTIVE:
+            self.logger.debug('VENDING INPROGRESS active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'VendingFailed':
+                self.vendingStatus = False
+                self.vendingResult = "Payment Failed"
+                self.logger.debug('VENDING INPROGRESS FAILED')
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+            elif self.wakereason == self.REASON_UI and self.uievent == 'VendingSuccessful':
+                va = float(self.vendingAmount)
+                self.logger.debug('VENDING INPROGRESS SUCCCEDED')
+                self.vendingStatus = True
+                self.vendingResult = "Payment Complete"
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+                
+
+            return False
+
+        elif self.phEXIT:
+            self.logger.debug('VENDING INPROGRESS exit')
+            self.pin_led1.set(LOW)
+            return self.goNextState()
+
+    #############################################
+    ## STATE_VENDING_COMPLETE
+    #############################################
+    def stateVendingComplete(self):
+        if self.phENTER:
+            self.logger.debug('VENDING COMPLETE Enter')
+            return self.goActive()
+
+        elif self.phACTIVE:
+            self.logger.debug('VENDING COMPLETE active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'Idle':
+                print('VENDING FINALLY DONE')
+                self.disableTool()
+                return self.exitAndGoto(self.STATE_IDLE)
+                
+
+            return False
+
+        elif self.phEXIT:
+            self.logger.debug('VENDING COMPLETE exit')
+            self.pin_led1.set(LOW)
+            return self.goNextState()
 
     #############################################
     ## STATE_VENDING_LIST
@@ -95,11 +174,13 @@ class Personality(PersonalitySimple):
         elif self.phACTIVE:
             self.logger.debug('VENDING LOGIN active')
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
-                self.disableTool()
-                return self.exitAndGoto(self.STATE_IDLE)
+                self.vendingResult = "Payment Aborted"
+                self.vendingStatus = False
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
                 va = float(self.vendingAmount)
                 print('VENDING ACCEPTED',va,type(self.vendingAmount))
+                return self.exitAndGoto(self.STATE_VENDING_INPROGRESS)
                 
 
             return False

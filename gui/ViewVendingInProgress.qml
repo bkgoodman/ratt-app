@@ -40,103 +40,41 @@ import QtQuick.Layouts 1.3
 
 View {
     id: root
-    name: "Homing"
+    name: "Payment In Progress"
+
+    color: "#0000cc"
 
     function _show() {
-      status.keyEscActive = true;
-      status.keyReturnActive = ((activeMemberRecord.level > 0) || (config.Personality_HomingManualOverrideEnabled));
+        showTimer.start();
+        //sound.homingWarningAudio.play();
+      status.keyEscActive = true; // FIXME disable
+      status.keyReturnActive = true; // FIXME disable
       status.keyUpActive = false;
       status.keyDownActive = false;
-
-      sound.generalAlertAudio.play();
-      gentleReminderTimer.start();
-      audioInstructionTimer.start();
-      timeoutTimer.start();
     }
 
-    function _hide() {
-      audioInstructionTimer.stop();
-      overrideTimer.stop();
-      timeoutTimer.stop();
-      gentleReminderTimer.stop();
-
-      sound.homingInstructionsAudio.stop();
-      sound.generalAlertAudio.stop();
-
+    function done() {
+      appWindow.uiEvent('VendingConfirm');
     }
 
     function keyEscape(pressed) {
-
-      appWindow.uiEvent('HomingAborted');
-
+      if (pressed) {appWindow.uiEvent('VendingFailed'); }
       return true;
     }
-
     function keyReturn(pressed) {
-      if ((activeMemberRecord.level > 0) || (config.Personality_HomingManualOverrideEnabled)) {
-        if (pressed) {
-          overrideTimer.start();
-          appWindow.uiEvent('HomingOverride');
-        } else
-          overrideTimer.stop();
-      }
-
+      if (pressed) {appWindow.uiEvent('VendingSuccessful'); }
       return true;
     }
 
     Timer {
-      id: overrideTimer
-      interval: 3000
-      running: false
-      repeat: false
-      onTriggered: {
-          stop();
-          appWindow.uiEvent('HomingOverride');
-      }
-    }
-
-    Timer {
-      id: timeoutTimer
-      interval: 60000
-      running: false
-      repeat: false
-      onTriggered: {
-          stop();
-          appWindow.uiEvent('HomingTimeout');
-      }
-    }
-
-    Timer {
-      id: gentleReminderTimer
-      interval: 2000
-      running: false
-      repeat: true
-      onTriggered: {
-        sound.generalAlertAudio.play();
-      }
-    }
-
-    Timer {
-      id: audioInstructionTimer
-      interval: 15000
-      running: false
-      repeat: true
-      onTriggered: {
-        sound.homingInstructionsAudio.play();
-        interval = 30000;
-      }
-    }
-
-    Connections {
-      target: sound.homingInstructionsAudio
-
-      onPlayingChanged: {
-        if (target.playing) {
-          gentleReminderTimer.stop();
-        } else if (shown) {
-          gentleReminderTimer.start();
+	// FIXME??
+        id: showTimer
+        interval: 60000
+        repeat: false
+        running: false
+        onTriggered: {
+            done();
         }
-      }
     }
 
     SequentialAnimation {
@@ -145,36 +83,36 @@ View {
         ColorAnimation {
             target: root
             property: "color"
-            from: "#cc0000"
-            to: "#0000cc"
-            duration: 2000
+            from: "#0000cc"
+            to: "#00cccc"
+            duration: 1000
         }
         ColorAnimation {
             target: root
             property: "color"
-            from: "#0000cc"
-            to: "#cc0000"
-            duration: 2000
+            from: "#00cccc"
+            to: "#0000cc"
+            duration: 1000
         }
     }
-
     ColumnLayout {
         anchors.fill: parent
         Label {
             Layout.fillWidth: true
-            text: "HOME GANTRY"
+            text: "Processing"
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 18
+            font.pixelSize: 14
             font.weight: Font.Bold
-            color: "#ffffff"
+            color: "#ffff00"
         }
         Label {
             Layout.fillWidth: true
-            text: "PRESS XY-0"
+            text: "One Moment Please"
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 20
-            font.weight: Font.DemiBold
-            color: "#ffff00"
+            font.pixelSize: 14
+            font.weight: Font.Demi
+            color: "#ffffff"
         }
+
     }
 }

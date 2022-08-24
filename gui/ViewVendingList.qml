@@ -77,9 +77,11 @@ View {
     }
 
     function keyEscape(pressed) {
-      appWindow.uiEvent('VendingAborted'); 
-      vendingAmount=1;
-      vendingAmountString = moneyString(vendingAmount)
+      if (pressed ) {
+	      vendingAmount=1;
+	      vendingAmountString = moneyString(vendingAmount)
+	      appWindow.uiEvent('VendingAborted'); 
+	}
       return true;
     }
 
@@ -111,24 +113,21 @@ View {
           vendingAmountString = moneyString(vendingAmount)
           appWindow.uiEvent('VendingAccepted');
         } 
-
       return true;
     }
 
 
     Timer {
       id: timeoutTimer
-      interval: 100000
+      interval: 25000
       running: true
       repeat: false
       onTriggered: {
           stop();
-          appWindow.uiEvent('VendingAborted');
+          //appWindow.uiEvent('VendingAborted');
           keyEscape(true);
       }
     }
-
-
 
 
     SequentialAnimation {

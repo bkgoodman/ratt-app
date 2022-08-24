@@ -107,8 +107,14 @@ ApplicationWindow {
                 case "VendingList":
                     switchTo(viewVendingList);
                     break;
+                case "VendingComplete":
+                    switchTo(viewVendingComplete);
+                    break;
                 case "VendingConfirm":
                     switchTo(viewVendingConfirm);
+                    break;
+                case "VendingInProgress":
+                    switchTo(viewVendingInProgress);
                     break;
                 case "ReportIssue":
                     switchTo(viewIssue);
@@ -252,6 +258,14 @@ ApplicationWindow {
                 }
                 ViewVendingList {
                     id: viewVendingList
+                    visible: false
+                }
+                ViewVendingComplete {
+                    id: viewVendingComplete
+                    visible: false
+                }
+                ViewVendingInProgress {
+                    id: viewVendingInProgress
                     visible: false
                 }
                 ViewVendingConfirm {
