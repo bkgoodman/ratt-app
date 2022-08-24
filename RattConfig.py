@@ -452,6 +452,7 @@ class RattConfig(QObject):
         self.addConfig('Auth', 'HttpAuthUser', 'user')
         self.addConfig('Auth', 'HttpAuthPassword', 'password')
         self.addConfig('Auth', 'AclUrl')
+        self.addConfig('Auth', 'VendingUrlPrefix')
         self.addConfig('Auth', 'AclCacheFile', '/data/ratt/ratt.acl')
         self.addConfig('Auth', 'ConfigUrl')
         self.addConfig('Auth', 'ConfigCacheFile', '/data/ratt/ratt-remote.conf')

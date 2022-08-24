@@ -41,7 +41,7 @@ from PersonalitySimple import Personality as PersonalitySimple
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QVariant
 from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import json
-from urllib.request import urlopen
+import requests
 import time
 class Worker(QObject):
     finished = pyqtSignal()
@@ -51,8 +51,26 @@ class Worker(QObject):
     def run(self):
         """Long-running task."""
         print ("START WORKER SLEEP")
-        time.sleep(3)
-        print ("START END WIRJER SLEEP")
+        time.sleep(1)
+        url = self.parent.app.config.value("Auth.VendingUrlPrefix")
+        username = self.parent.app.config.value("Auth.HttpAuthUser")
+        password = self.parent.app.config.value("Auth.HttpAuthPassword")
+        print ("VENDING URL UIS",url)
+        try:
+          self.parent.vendingReason="Attempt"
+          with requests.get(url, auth=(username, password)) as conn:
+            print ("CONTENT GOT",conn.content)
+            print ("START END WIRJER SLEEP")
+            if (conn.status_code >= 200) and (conn.status_code <=299):
+              self.parent.vendingStatus=True
+              self.parent.vendingResult="Payment Complete"
+            else:
+              self.parent.vendingStatus=False
+              self.parent.vendingResult=f"HTTP Error {conn.status_code}"
+        except BaseException as e:
+            self.parent.vendingStatus=False
+            self.parent.vendingResult=str(e)
+            print (e,type(e),dir(e))
         self.finished.emit()
         self.downloadComplete.emit()
         self.parent.slotUIEvent("downloadComplete")
@@ -68,7 +86,7 @@ class Personality(PersonalitySimple):
     STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
-    _vendingResult = "Default"
+    _vendingResult = "Indeterminiate"
     _vendingStatus = False
 
     def __init__(self, *args, **kwargs):
@@ -127,10 +145,6 @@ class Personality(PersonalitySimple):
     def stateVendingInProgress(self):
         if self.phENTER:
             self.logger.debug('VENDING INPROGRESS Enter')
-            xxx=  self.goActive()
-            #with urlopen("https://sunlightlabs.github.io/congress/legislators?api_key='(myapikey)") as conn:
-            #   print (conn.read())
-            #   time.sleep(11)
             self.thread = QThread()
             self.worker = Worker()
             self.worker.parent=self
@@ -140,6 +154,7 @@ class Personality(PersonalitySimple):
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
+            xxx=  self.goActive()
             return xxx
 
         elif self.phACTIVE:
@@ -156,6 +171,9 @@ class Personality(PersonalitySimple):
                 self.vendingResult = "Payment Complete"
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'downloadComplete':
+                self.thread.quit()
+                self.thread.wait(9999999)
+                del self.thread
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
                 
 
