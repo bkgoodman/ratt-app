@@ -141,22 +141,13 @@ View {
 
       sound.liftInstructionsAudio.stop();
 
-      if (pw == config.Personality_Password) {
-        root.state = 'correct';
-        messageText = config.Personality_PasswordCorrectText
-        scrollReason = false;
-        showTimer.interval = 2500;
-        delayTimer.start();
-        sound.liftCorrectAudio.play();
+      root.state = 'correct';
+      messageText = "You win all the moneys!!!"
+      scrollReason = false;
+      showTimer.interval = 2500;
+      delayTimer.start();
+      sound.liftCorrectAudio.play();
 
-      } else {
-        root.state = 'incorrect';
-        messageText = config.Personality_PasswordIncorrectText
-        scrollReason = false;
-        showTimer.interval = 2500;
-        delayTimer.start();
-        sound.liftIncorrectAudio.play();
-      }
     }
 
     Timer {
@@ -318,7 +309,7 @@ View {
                     event.accepted = true;
                   } else if (event.key === Qt.Key_Return) {
                     sound.keyAudio.play();
-                    tableB.forceActiveFocus();
+                    checkPassword();
                     event.accepted = true;
                   }
               }

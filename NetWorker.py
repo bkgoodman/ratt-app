@@ -138,6 +138,8 @@ class NetWorker(QObject):
             self.hwAddr = self.getHwAddress(ifc=self.ifcName)
 
         self.logger.info('My MAC address is %s' % self.currentHwAddr)
+        ip = self.getIfcAddress(ifc=self.ifcName)
+        self.logger.info('My IP address is %s' % ip.toString())
         self.logger.info('My Node ID is %s' % self.currentNodeId)
 
         self.statusTimer = QTimer()
@@ -191,6 +193,7 @@ class NetWorker(QObject):
                 res['essid'] = 'Simulator'
                 res['txrate'] = '1.0 MBit/s'
                 res['rxrate'] = '1.0 MBit/s'
+                res['ip'] = '127.0.0.1'
                 return True
 
 
@@ -212,6 +215,8 @@ class NetWorker(QObject):
 
             res['txrate'] = re.search('tx bitrate:.*', iw).group(0).split('\\t')[1].split('\\n')[0]
             res['rxrate'] = re.search('rx bitrate:.*', iw).group(0).split('\\t')[1].split('\\n')[0]
+            ip = self.getIfcAddress(ifc=self.ifcName)
+            res['ip'] = ip.toString()
 
         except:
             return False

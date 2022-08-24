@@ -104,6 +104,12 @@ ApplicationWindow {
                     switchTo(viewAccess);
                   }
                   break;
+                case "VendingList":
+                    switchTo(viewVendingList);
+                    break;
+                case "VendingConfirm":
+                    switchTo(viewVendingConfirm);
+                    break;
                 case "ReportIssue":
                     switchTo(viewIssue);
                     break;
@@ -242,6 +248,14 @@ ApplicationWindow {
                 }
                 ViewMemberList {
                     id: viewMemberList
+                    visible: false
+                }
+                ViewVendingList {
+                    id: viewVendingList
+                    visible: false
+                }
+                ViewVendingConfirm {
+                    id: viewVendingConfirm
                     visible: false
                 }
                 ViewAccess {
