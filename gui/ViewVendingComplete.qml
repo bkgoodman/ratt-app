@@ -65,11 +65,12 @@ View {
     }
 
     function done() {
+		showTimer.stop();
 			appWindow.uiEvent('Idle'); 
     }
 
     function keyEscape(pressed) {
-	if (pressed) { appWindow.uiEvent('Idle'); }
+	if (pressed) { done()};
       return true;
     }
 

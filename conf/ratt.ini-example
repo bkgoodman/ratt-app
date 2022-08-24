@@ -59,7 +59,7 @@ File=/tmp/ratt.log
 ; Controls log level of personality
 ; LogLevel=DEBUG
 
-; Class=[Simple|LaserCutter|AutoLift|ProtoTrak] - default=Simple
+; Class=[Simple|LaserCutter|AutoLift|ProtoTrak|Mopa|Epilog|Vending] - default=Simple
 ; Personality type (other types may be added)
 ; Class=LaserCutter
 
@@ -205,6 +205,12 @@ ConfigUrl=https://%(ServerHost)s:%(ServerPort)s/%(UrlBase)sapi/v1/node/%(NodeNam
 ; ConfigCacheFile=<filename> - default=/data/ratt/ratt-remote.conf
 ; Preferably non-volatile location of the cached config file that is downloaded from the Auth Backend
 ; ConfigCacheFile=/tmp/ratt-remote.conf
+
+; VendingUrl=<url>
+; Full URL to request vending payments
+; The Auth Backend supports config overlays so certain options in this config can be overridden
+; in the web app.  
+VendingUrlPrefix=https://%(ServerHost)s:%(ServerPort)s/authit/api/v1/whoami
 
 ;;;;;;;;;;;;
 [MQTT]
