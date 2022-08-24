@@ -39,7 +39,23 @@
 from QtGPIO import LOW, HIGH
 from PersonalitySimple import Personality as PersonalitySimple
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QVariant
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import json
+from urllib.request import urlopen
+import time
+class Worker(QObject):
+    finished = pyqtSignal()
+    downloadComplete = pyqtSignal(name="downloadComplete")
+    parent = None
+
+    def run(self):
+        """Long-running task."""
+        print ("START WORKER SLEEP")
+        time.sleep(3)
+        print ("START END WIRJER SLEEP")
+        self.finished.emit()
+        self.downloadComplete.emit()
+        self.parent.slotUIEvent("downloadComplete")
 
 class Personality(PersonalitySimple):
     #############################################
@@ -111,7 +127,20 @@ class Personality(PersonalitySimple):
     def stateVendingInProgress(self):
         if self.phENTER:
             self.logger.debug('VENDING INPROGRESS Enter')
-            return self.goActive()
+            xxx=  self.goActive()
+            #with urlopen("https://sunlightlabs.github.io/congress/legislators?api_key='(myapikey)") as conn:
+            #   print (conn.read())
+            #   time.sleep(11)
+            self.thread = QThread()
+            self.worker = Worker()
+            self.worker.parent=self
+            self.worker.moveToThread(self.thread)
+            self.thread.start()
+            self.thread.started.connect(self.worker.run)
+            self.worker.finished.connect(self.thread.quit)
+            self.worker.finished.connect(self.worker.deleteLater)
+            self.thread.finished.connect(self.thread.deleteLater)
+            return xxx
 
         elif self.phACTIVE:
             self.logger.debug('VENDING INPROGRESS active')
@@ -125,6 +154,8 @@ class Personality(PersonalitySimple):
                 self.logger.debug('VENDING INPROGRESS SUCCCEDED')
                 self.vendingStatus = True
                 self.vendingResult = "Payment Complete"
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+            elif self.wakereason == self.REASON_UI and self.uievent == 'downloadComplete':
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
                 
 

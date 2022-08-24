@@ -44,6 +44,17 @@ View {
 
     color: "#0000cc"
 
+    Connections {
+        target: personality
+	onFinished: {
+	      activetext.text= "Finished";
+	      appWindow.uiEvent('DownloadFinished'); 
+	}
+	onDownloadComplete: {
+	      activetext.text= "DownloadComplete";
+	      appWindow.uiEvent('DownloadFinished'); 
+	}
+}
     function _show() {
         showTimer.start();
         //sound.homingWarningAudio.play();
@@ -107,6 +118,7 @@ View {
         }
         Label {
             Layout.fillWidth: true
+            id: activetext
             text: "One Moment Please"
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14

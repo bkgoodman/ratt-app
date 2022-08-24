@@ -50,7 +50,7 @@ View {
 	onVendingResult: {
 		// status, result
 		// Doesn't do anything??
-                //message.text = result
+                message.text = result
 		//personality.vendingResult = result
 		//personality.vendingStats = status
 		isFailed = status
