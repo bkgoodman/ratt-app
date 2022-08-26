@@ -47,7 +47,7 @@ View {
     property string vendingAmount
     property string surchargeAmount
     property string totalAmount
-    property bool hsc
+    property bool applySurcharge
 
 
     Connections {
@@ -58,7 +58,7 @@ View {
                 amountText.text = vendingAmount
                 surchargeText.text = surchargeAmount
                 totalText.text = totalAmount
-		hsc = hasSurcharge 
+		applySurcharge = hasSurcharge 
 		status.keyReturnLabel = "Pay"
 	   }
 	}
@@ -168,6 +168,7 @@ RowLayout {
 
 RowLayout {
             Layout.preferredHeight: 10
+visible: applySurcharge
     Item {
     Layout.preferredWidth: 96
        Label {
