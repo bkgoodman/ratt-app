@@ -65,7 +65,7 @@ View {
 
     function _show() {
       showTimer.start();
-       //sound.homingWarningAudio.play();
+      sound.vendingConfirmAudio.play();
       status.keyEscActive = true; 
       status.keyReturnActive = true; 
       status.keyDownActive = false;
@@ -82,6 +82,7 @@ View {
 	if (pressed) { 
 		showTimer.stop();
 		status.keyReturnLabel =  "\u25cf"
+	        sound.vendingCanceledAudio.play();
 		appWindow.uiEvent('VendingAborted'); 
 	};
       return true;
@@ -89,6 +90,7 @@ View {
     function keyReturn(pressed) {
 	if (pressed) { 
 		showTimer.stop();
+	        sound.vendingConfirmAudio.stop();
 		status.keyReturnLabel =  "\u25cf"
 		appWindow.uiEvent('VendingAccepted'); 
 	};

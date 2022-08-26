@@ -140,6 +140,7 @@ class Personality(PersonalitySimple):
     def enableTool(self):
         self.logger.debug('VENDING ENABLE TOOL')
         self.pins_out[0].set(HIGH)
+        self.pins_out[1].set(HIGH)
 
 
     # disable tool
@@ -205,6 +206,7 @@ class Personality(PersonalitySimple):
             amount = self.vendingAmount
             o = { "Member":name,"Amount":amount,"Success":self.vendingStatus,"Reason":self.vendingResult}
             self.app.mqtt.slotPublishSubtopic('vending/report', json.dumps(o))
+            self.enableTool()
             return self.goActive()
 
         elif self.phACTIVE:
@@ -218,6 +220,7 @@ class Personality(PersonalitySimple):
             return False
 
         elif self.phEXIT:
+            self.disableTool()
             self.logger.debug('VENDING COMPLETE exit')
             self.pin_led1.set(LOW)
             return self.goNextState()

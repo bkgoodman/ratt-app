@@ -345,6 +345,26 @@ class RattConfig(QObject):
         return self.config['Sound.EnableEstop']
 
     @pyqtProperty(str, notify=configChanged)
+    def Sound_VendingSuccessful(self):
+        return self.config['Sound.VendingSuccessful']
+
+    @pyqtProperty(str, notify=configChanged)
+    def Sound_VendingFailed(self):
+        return self.config['Sound.VendingFailed']
+
+    @pyqtProperty(str, notify=configChanged)
+    def Sound_VendingCanceled(self):
+        return self.config['Sound.VendingCanceled']
+
+    @pyqtProperty(str, notify=configChanged)
+    def Sound_VendingList(self):
+        return self.config['Sound.VendingList']
+
+    @pyqtProperty(str, notify=configChanged)
+    def Sound_VendingConfirm(self):
+        return self.config['Sound.VendingConfirm']
+
+    @pyqtProperty(str, notify=configChanged)
     def Issues_Count(self):
         return len(self.parser.items('Issues'))
 

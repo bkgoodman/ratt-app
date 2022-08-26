@@ -54,6 +54,11 @@ View {
 		//personality.vendingResult = result
 		//personality.vendingStats = status
 		isFailed = status
+ 		if (isFailed) {
+		    sound.vendingFailedAudio.start();
+		} else {
+		    sound.vendingSuccessAudio.start();
+		}
 		}
 	}
 
@@ -69,6 +74,8 @@ View {
 
     function done() {
 		showTimer.stop();
+		 sound.vendingFailedAudio.stop();
+		 sound.vendingSuccessAudio.stop();
       		status.keyEscLabel = "\u2716"
 		appWindow.uiEvent('Idle'); 
     }

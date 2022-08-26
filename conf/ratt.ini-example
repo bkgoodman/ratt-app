@@ -380,3 +380,10 @@ HomingOverride=audio/homing_override.wav
 ; Path to audio file played to inform user to disengage e-stops and press reset
 ; Only used when WaitEstopActiveEnabled=True
 EnableEstop=audio/enable_estop.wav
+
+; Vending-related audio files
+VendingCanceled=audio/VendingCanceled.wav
+VendingConfirm=audio/VendingConfirm.wav
+VendingFailed=audio/VendingFailed.wav
+VendingList=audio/VendingList.wav
+VendingSuccessful=audio/VendingSuccessful.wav

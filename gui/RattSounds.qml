@@ -58,6 +58,11 @@ Item {
     property alias homingWarningAudio: homingWarningAudio
     property alias homingOverrideAudio: homingOverrideAudio
     property alias enableEstopAudio: enableEstopAudio
+    property alias vendingFailedAudio: vendingFailedAudio
+    property alias vendingSuccessAudio: vendingSuccessAudio
+    property alias vendingConfirmAudio: vendingConfirmAudio
+    property alias vendingListAudio: vendingListAudio
+    property alias vendingCanceledAudio: vendingCanceledAudio
     
     Component.onCompleted: {
       if (config.Sound_EnableSilenceLoop) {
@@ -141,5 +146,25 @@ Item {
     SoundEffect {
         id: enableEstopAudio
         source: config.Sound_EnableEstop
+    }
+    SoundEffect {
+        id: vendingSuccessAudio
+        source: config.Sound_VendingSuccess
+    }
+    SoundEffect {
+        id: vendingFailedAudio
+        source: config.Sound_VendingFailed
+    }
+    SoundEffect {
+        id: vendingCanceledAudio
+        source: config.Sound_VendingCanceled
+    }
+    SoundEffect {
+        id: vendingListAudio
+        source: config.Sound_VendingList
+    }
+    SoundEffect {
+        id: vendingConfirmAudio
+        source: config.Sound_VendingConfirm
     }
 }

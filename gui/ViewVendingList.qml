@@ -62,7 +62,7 @@ View {
       status.keyUpActive = true;
       status.keyDownActive = true;
 
-      sound.generalAlertAudio.play();
+      sound.vendingListAudio.play();
       vendingAmount = 1;
       timeoutTimer.start();
       status.keyEscLabel = "\u2716"
@@ -80,7 +80,7 @@ View {
     function _hide() {
       timeoutTimer.stop();
 
-      sound.generalAlertAudio.stop();
+      sound.vendingListAudio.stop();
 
     }
 
@@ -88,6 +88,7 @@ View {
       if (pressed ) {
 	      vendingAmount=1;
 	      vendingAmountString = moneyString(vendingAmount)
+	      sound.vendingCanceledAudio.play();
 	      appWindow.uiEvent('VendingAborted'); 
 	}
       return true;
