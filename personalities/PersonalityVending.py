@@ -66,17 +66,26 @@ class Worker(QObject):
           url = f"{url}/{name}/{amount:0.0f}"
           print ("VENDING URL UIS",url,name,tag,amount)
           self.parent.vendingReason="Attempt"
+          self.parent.vendingStatus=False
           with requests.get(url, auth=(username, password)) as conn:
             print ("CONTENT GOT",conn.content)
-            print ("START END WIRJER SLEEP")
+            print ("START END SLEEP")
             if (conn.status_code >= 200) and (conn.status_code <=299):
-              self.parent.vendingStatus=True
-              self.parent.vendingResult="Payment Complete"
+              # Check result
+              try:
+                vendresult = json.loads(conn.content)
+                print (vendresult)
+                if vendresult['status'] != 'success':
+                  self.parent.vendingResult=vendresult['description']
+                else:
+                  self.parent.vendingStatus=True
+                  self.parent.vendingResult="Payment Complete"
+              except BaseException as e:
+                  self.parent.vendingResult="Malformed Response"
+                  print ("Vend Excetion",e)
             else:
-              self.parent.vendingStatus=False
               self.parent.vendingResult=f"HTTP Error {conn.status_code}"
         except BaseException as e:
-            self.parent.vendingStatus=False
             self.parent.vendingResult=str(e)
             print (e,type(e),dir(e))
         self.finished.emit()
