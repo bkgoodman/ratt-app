@@ -206,11 +206,24 @@ ConfigUrl=https://%(ServerHost)s:%(ServerPort)s/%(UrlBase)sapi/v1/node/%(NodeNam
 ; Preferably non-volatile location of the cached config file that is downloaded from the Auth Backend
 ; ConfigCacheFile=/tmp/ratt-remote.conf
 
+
 ; VendingUrl=<url>
 ; Full URL to request vending payments
 ; The Auth Backend supports config overlays so certain options in this config can be overridden
 ; in the web app.  
-VendingUrlPrefix=https://%(ServerHost)s:%(ServerPort)s/authit/api/v1/whoami
+VendingUrlPrefix=https://%(ServerHost)s:%(ServerPort)s/authit/api/v1/vending/
+
+;;;;;;;;;;;;
+[Vending]
+
+; VendingSurcharge=float
+; Optional - dollar value of vending surcharge (i.e. "0.30")
+VendingSurcharge=0.30
+
+; VendingMinimum - Maximum chargable dollar value (before surcharge)
+VendingMinimum=0.75
+; VendingMaximum - Maximum chargable dollar value (before surcharge)
+VendingMaximum=5.00
 
 ;;;;;;;;;;;;
 [MQTT]

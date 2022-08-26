@@ -58,8 +58,8 @@ View {
     function _show() {
         showTimer.start();
         //sound.homingWarningAudio.play();
-      status.keyEscActive = true; // FIXME disable
-      status.keyReturnActive = true; // FIXME disable
+      status.keyEscActive = false; 
+      status.keyReturnActive = false;
       status.keyUpActive = false;
       status.keyDownActive = false;
     }

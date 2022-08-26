@@ -36,6 +36,10 @@
 # Author: Steve Richardson (steve.richardson@makeitlabs.com)
 #
 
+
+
+# Audio: https://notevibes.com/cabinet.php  voice "Rina"
+
 from QtGPIO import LOW, HIGH
 from PersonalitySimple import Personality as PersonalitySimple
 from PyQt5.QtCore import pyqtSlot, pyqtSignal, pyqtProperty, QVariant
@@ -58,7 +62,7 @@ class Worker(QObject):
           password = self.parent.app.config.value("Auth.HttpAuthPassword")
           name = self.parent.activeMemberRecord.name
           tag = self.parent.activeMemberRecord.tag
-          amount = self.parent.vendingAmount*100
+          amount = self.parent.totalCharge*100
           url = f"{url}/{name}/{amount:0.0f}"
           print ("VENDING URL UIS",url,name,tag,amount)
           self.parent.vendingReason="Attempt"
@@ -87,9 +91,12 @@ class Personality(PersonalitySimple):
     STATE_VENDING_LIST = 'VendingList'
     STATE_VENDING_CONFIRM = 'VendingConfirm'
     STATE_VENDING_INPROGRESS = 'VendingInProgress'
+    STATE_VENDING_CONFIRM = 'VendingConfirm'
     STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
+    vendingConfirmData = pyqtSignal(str, str, str,bool, name="vendingConfirmData", arguments=['vendingAmount','surchargeAmount','totalAmount',"hasSurcharge"])
+    vendingMinMax = pyqtSignal(float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum'])
     _vendingResult = "Indeterminiate"
     _vendingStatus = False
 
@@ -100,6 +107,7 @@ class Personality(PersonalitySimple):
         self.states[self.STATE_VENDING_LIST] = self.stateVendingList
         self.states[self.STATE_VENDING_INPROGRESS] = self.stateVendingInProgress
         self.states[self.STATE_VENDING_COMPLETE] = self.stateVendingComplete
+        self.states[self.STATE_VENDING_CONFIRM] = self.stateVendingConfirm
 
 
     @pyqtProperty(float)
@@ -148,7 +156,6 @@ class Personality(PersonalitySimple):
     #############################################
     def stateVendingInProgress(self):
         if self.phENTER:
-            self.logger.debug('VENDING INPROGRESS Enter')
             self.thread = QThread()
             self.worker = Worker()
             self.worker.parent=self
@@ -169,7 +176,7 @@ class Personality(PersonalitySimple):
                 self.logger.debug('VENDING INPROGRESS FAILED')
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingSuccessful':
-                va = float(self.vendingAmount)
+                va = float(self.totalCharge)
                 self.logger.debug('VENDING INPROGRESS SUCCCEDED')
                 self.vendingStatus = True
                 self.vendingResult = "Payment Complete"
@@ -220,41 +227,74 @@ class Personality(PersonalitySimple):
     #############################################
     def stateVendingList(self):
         if self.phENTER:
-            self.logger.debug('VENDING LOGIN Enter')
+            self.logger.debug('VENDING LIST Enter')
             self.app.rootContext().setContextProperty("vendingAmount", 1)
+            self.activeMemberRecord.loggedIn = True
+            self.pin_led1.set(HIGH)
+            self.vendingAmount =1
+            maxCharge = self.app.config.value("Vending.VendingMaximum")
+            minCharge = self.app.config.value("Vending.VendingMinimum")
+            self.vendingMinMax.emit(minCharge,maxCharge)
+            return self.goActive()
+
+        elif self.phACTIVE:
+            self.logger.debug('VENDING LIST active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
+                self.vendingResult = "Payment Aborted"
+                self.vendingStatus = False
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+            elif self.wakereason == self.REASON_UI and self.uievent == 'VendingConfirm':
+                va = float(self.vendingAmount)
+                print('VENDING ACCEPTED',va,type(self.vendingAmount))
+                return self.exitAndGoto(self.STATE_VENDING_CONFIRM)
+                
+
+            return False
+
+        elif self.phEXIT:
+            self.logger.debug('VENDING LIST exit')
+            self.pin_led1.set(LOW)
+            return self.goNextState()
+
+    #############################################
+    ## STATE_VENDING_CONFIRM
+    #############################################
+    def stateVendingConfirm(self):
+        if self.phENTER:
+            self.logger.debug('VENDING CONFIRM Enter')
             self.telemetryEvent.emit('personality/login', json.dumps({'allowed': True, 'member': self.activeMemberRecord.name}))
             self.activeMemberRecord.loggedIn = True
             self.pin_led1.set(HIGH)
+            surcharge = self.app.config.value("Vending.VendingSurcharge")
+            self.totalCharge = self.vendingAmount + surcharge
+            self.vendingConfirmData.emit(f"${self.vendingAmount:0.2f}",f"${surcharge:0.2f}",f"${self.totalCharge:0.2f}",False if surcharge == 0 else True)
             self.vendingAmount =1
             return self.goActive()
 
         elif self.phACTIVE:
-            self.logger.debug('VENDING LOGIN active')
+            self.logger.debug('VENDING CONFIRM active')
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
                 self.vendingResult = "Payment Aborted"
                 self.vendingStatus = False
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
                 va = float(self.vendingAmount)
-                print('VENDING ACCEPTED',va,type(self.vendingAmount))
+                print('VENDING CONFIRMED',va,type(self.vendingAmount))
                 return self.exitAndGoto(self.STATE_VENDING_INPROGRESS)
                 
 
             return False
 
         elif self.phEXIT:
-            self.logger.debug('VENDING LOGIN exit')
+            self.logger.debug('VENDING CONFIRM exit')
             self.pin_led1.set(LOW)
             return self.goNextState()
-
     #############################################
     ## STATE_IDLE
     #############################################
     def stateIdle(self):
         if self.phENTER:
             self.logger.info('simple stateIdle enter')
-            if self.activeMemberRecord.loggedIn:
-                self.telemetryEvent.emit('personality/logout', json.dumps({'member': self.activeMemberRecord.name, 'reason': 'other'}))
             self.activeMemberRecord.clear()
             self.wakeOnRFID(True)
             self.pin_led1.set(LOW)

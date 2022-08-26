@@ -44,9 +44,15 @@ View {
 
     property real vendingAmount: 1.00
     property string vendingAmountString: "1.00"
+    property real vendingMin: 0
+    property real vendingMax: 10
 
     Connections {
         target: personality
+	onVendingMinMax: {
+		vendingMin = vendingMinimum
+		vendingMax = vendingMaximum
+		}
 }
 
 
@@ -59,6 +65,8 @@ View {
       sound.generalAlertAudio.play();
       vendingAmount = 1;
       timeoutTimer.start();
+      status.keyEscLabel = "\u2716"
+      status.keyReturnLabel = "OK"
     }
 
     function moneyString(val) {
@@ -87,7 +95,7 @@ View {
 
     function keyUp(pressed) {
       if (pressed) {
-	if (vendingAmount < 9.75) {
+	if (vendingAmount < vendingMax) {
         vendingAmount += 0.25
 	}
         vendingAmountString = moneyString(vendingAmount)
@@ -98,7 +106,7 @@ View {
     function keyDown(pressed) {
      if (pressed) {
         vendingAmount -= 0.25
-	if (vendingAmount < 0.00) {  vendingAmount = 0}
+	if (vendingAmount < vendingMin) {  vendingAmount = vendingMin}
         vendingAmountString = moneyString(vendingAmount)
         appWindow.uiEvent('VendingKeyDown');
       }
@@ -111,7 +119,7 @@ View {
           personality.vendingAmount = vendingAmount
           vendingAmount=1;
           vendingAmountString = moneyString(vendingAmount)
-          appWindow.uiEvent('VendingAccepted');
+          appWindow.uiEvent('VendingConfirm');
         } 
       return true;
     }
@@ -120,7 +128,7 @@ View {
     Timer {
       id: timeoutTimer
       interval: 25000
-      running: true
+      running: false
       repeat: false
       onTriggered: {
           stop();
@@ -170,7 +178,7 @@ View {
         }
         Label {
             Layout.fillWidth: true
-            text: "Use arrows to adjust\nPress Blue button to Pay"
+            text: "Use arrows to adjust\nPress OK to Pay"
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 12
             font.weight: Font.Demi

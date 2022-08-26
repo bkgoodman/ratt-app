@@ -107,11 +107,11 @@ ApplicationWindow {
                 case "VendingList":
                     switchTo(viewVendingList);
                     break;
-                case "VendingComplete":
-                    switchTo(viewVendingComplete);
-                    break;
                 case "VendingConfirm":
                     switchTo(viewVendingConfirm);
+                    break;
+                case "VendingComplete":
+                    switchTo(viewVendingComplete);
                     break;
                 case "VendingInProgress":
                     switchTo(viewVendingInProgress);

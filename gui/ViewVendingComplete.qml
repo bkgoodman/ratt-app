@@ -54,19 +54,23 @@ View {
 		//personality.vendingResult = result
 		//personality.vendingStats = status
 		isFailed = status
+		}
 	}
-}
 
     function _show() {
       showTimer.start();
        //sound.homingWarningAudio.play();
-      status.keyEscActive = true; // FIXME disable
+      status.keyEscActive = true;
       status.keyDownActive = false;
+      status.keyUpActive = false;
+      status.keyReturnActive = false;
+      status.keyEscLabel = "\u25cf"
     }
 
     function done() {
 		showTimer.stop();
-			appWindow.uiEvent('Idle'); 
+      		status.keyEscLabel = "\u2716"
+		appWindow.uiEvent('Idle'); 
     }
 
     function keyEscape(pressed) {
@@ -75,11 +79,10 @@ View {
     }
 
     Timer {
-	// FIXME??
         id: showTimer
         interval: 10000
         repeat: false
-        running: true
+        running: false
         onTriggered: {
             done();
         }

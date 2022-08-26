@@ -34,136 +34,211 @@
 // Author: Steve Richardson (steve.richardson@makeitlabs.com)
 //
 
-import QtQuick 2.7
+import QtQuick 2.6
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
-import QtQuick.Controls.Styles 1.4
 
 View {
     id: root
-    name: "Vending List"
+    name: "Vending Confirm"
 
-    Keys.forwardTo: [activeVendingTable]
+    color: "#0000cc"
 
-    function updateActiveKeys() {
-        switch(state) {
-        case "list":
-            break;
-        case "scan":
-            status.setKeyActives(true, false, false, false);
-            break;
-        case "thank":
-            status.setKeyActives(false, false, false, false);
-        }
+    property string vendingAmount
+    property string surchargeAmount
+    property string totalAmount
+    property bool hsc
+
+
+    Connections {
+        target: personality
+	onVendingConfirmData: {
+		// vendingAmount, surchargeAmount, totalAmount, hasSurcharge
+		// Doesn't do anything??
+                amountText.text = vendingAmount
+                surchargeText.text = surchargeAmount
+                totalText.text = totalAmount
+		hsc = hasSurcharge 
+		status.keyReturnLabel = "Pay"
+	   }
+	}
+
+    function _show() {
+      showTimer.start();
+       //sound.homingWarningAudio.play();
+      status.keyEscActive = true; 
+      status.keyReturnActive = true; 
+      status.keyDownActive = false;
+      status.keyUpActive = false;
+
     }
 
-    onStateChanged: {
-        updateActiveKeys();
-    }
-
-    function done(report) {
-      appWindow.uiEvent('IdleBusyDone');
+    function done() {
+		showTimer.stop();
+		appWindow.uiEvent('VendingAccepted'); 
     }
 
     function keyEscape(pressed) {
-        if (pressed)
-            done(false);
-        return true;
+	if (pressed) { 
+		showTimer.stop();
+		status.keyReturnLabel =  "\u25cf"
+		appWindow.uiEvent('VendingAborted'); 
+	};
+      return true;
     }
-
-    function keyUp(pressed) {
-        if (pressed)
-          timeoutTimer.restart();
-        return false;
-    }
-
-    function keyDown(pressed) {
-        if (pressed)
-          timeoutTimer.restart();
-        return false;
-    }
-
-    function _show() {
-        focusTimer.start();
-        activeVendingTable.model = acl.activeVendingConfirm
-        activeVendingTable.selection.clear();
-        activeVendingTable.selection.select(0, 0);
-        activeVendingTable.currentRow = 0;
-
-        status.setKeyActives(true, true, true, false);
-    }
-
-    function _hide() {
-        activeVendingTable.focus = false;
-        root.focus = false;
+    function keyReturn(pressed) {
+	if (pressed) { 
+		showTimer.stop();
+		status.keyReturnLabel =  "\u25cf"
+		appWindow.uiEvent('VendingAccepted'); 
+	};
+      return true;
     }
 
     Timer {
-        id: focusTimer
-        interval: 100
-        running: false
+        id: showTimer
+        interval: 20000
         repeat: false
+        running: false
         onTriggered: {
-            activeVendingTable.forceActiveFocus();
+            keyEscape(true);
         }
     }
 
-    Timer {
-        id: timeoutTimer
-        interval: 15000
-        repeat: false
+    SequentialAnimation {
         running: shown
-        onTriggered: {
-          done(false);
+        loops: 1
+        ColorAnimation {
+            target: root
+            property: "color"
+            from: "#000000"
+            to: "#0000cc"
+            duration: 1000
         }
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: 2
 
+	Item {
+        Layout.preferredWidth: 160
+        Layout.maximumHeight: 12
+        Layout.preferredHeight: 12
         Label {
-            Layout.fillWidth: true
-            text: "Active Vendings (" + acl.numActiveRecords + ")"
-            font.pixelSize: 11
-            font.weight: Font.DemiBold
-            color: "#003399"
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-
-        TableView {
-            id: activeVendingTable
+            width: parent.width
             Layout.fillWidth: true
             Layout.fillHeight: true
-
-            style: TableViewStyle { }
-            headerVisible: false
-            alternatingRowColors: false
-
-            selectionMode: SelectionMode.SingleSelection
-
-            TableViewColumn {
-                role: "name"
-                title: "Name"
-            }
-
-            itemDelegate: Text {
-                text: ' [' + (styleData.row + 1) + ']: ' + styleData.value.replace('.', ' ')
-                elide: styleData.elideMode
-                color: styleData.textColor
-                verticalAlignment: Text.AlignVCenter
-                font.pixelSize: 10
-                height: 10
-            }
-
-            Keys.onPressed: {
-              timeoutTimer.restart();
-              if (event.key === Qt.Key_Escape) {
-                done(false);
-                event.accepted = true;
-              }
-            }
+            text: "Confirm Payment"
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 18  
+            font.weight: Font.Bold
+            color: "#ffff00"
         }
-    }
+	}
+        
+      
+RowLayout {
+            Layout.preferredHeight: 10
+    Item {
+    Layout.preferredWidth: 96
+       Label {
+                    width: parent.width
+                    text: "Vending:"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#ffff00"
+                    font.weight: Font.Normal
+                                    
+       }
+        
+    }    
+    Item {
+    Layout.preferredWidth: 128
+       Label {
+	   id: amountText
+           text:"--"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#ffffff"
+       }
+        
+    }    
 }
+
+RowLayout {
+            Layout.preferredHeight: 10
+    Item {
+    Layout.preferredWidth: 96
+       Label {
+                    width: parent.width
+                    text: "Surcharge:"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#ffff00"
+                    font.weight: Font.Normal
+                                    
+       }
+        
+    }    
+    Item {
+    Layout.preferredWidth: 128
+       Label {
+	   id: surchargeText
+           text:"--"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#ffffff"
+       }
+        
+    }    
+}
+RowLayout {
+            Layout.preferredHeight: 18
+    Item {
+    Layout.preferredWidth: 96
+       Label {
+                    width: parent.width
+                    text: "Total:"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#ffff00"
+                    font.weight: Font.Bold
+                                    
+       }
+        
+    }    
+    Item {
+    Layout.preferredWidth: 128
+       Label {
+	   id: totalText
+           text:"--"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 14
+                    color: "#00ff00"
+                    font.weight: Font.Bold
+       }
+        
+    }    
+}
+
+
+RowLayout {
+            Layout.preferredHeight: 22
+    Item {
+        Layout.preferredWidth: 160
+        Layout.maximumHeight: 18
+        Layout.preferredHeight: 18
+
+       Label {
+                    width: parent.width
+                    text: "Press \"Pay\" to Confirm"
+                    horizontalAlignment: Text.AlignHCenter
+                    font.pixelSize: 10
+                    color: "#ffff00"
+                    font.weight: Font.Demi
+                                    
+       }
+        
+    } 
+    }
+        }
+        }
