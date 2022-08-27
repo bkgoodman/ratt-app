@@ -220,10 +220,23 @@ VendingUrlPrefix=https://%(ServerHost)s:%(ServerPort)s/authit/api/v1/vending/
 ; Optional - dollar value of vending surcharge (i.e. "0.30")
 VendingSurcharge=0.30
 
+; VendingDefault - Initial/Default paymount amount
+VendingDefault=1
+
+; VendingIncrement - Up/Down arrow increment change
+VendingIncrement=0.25
+
 ; VendingMinimum - Maximum chargable dollar value (before surcharge)
-VendingMinimum=0.75
+; VendingMinimum=0.75
+
 ; VendingMaximum - Maximum chargable dollar value (before surcharge)
-VendingMaximum=5.00
+; VendingMaximum=5.00
+
+; What kind of payments to kick Quaters=OUT3 Dollars=OUT4
+; Payout=[Quarters|Dollars|Both|None]
+
+; PayoutTime - Time (seconds) betweens payouts
+; PayoutTime=0.5
 
 ;;;;;;;;;;;;
 [MQTT]

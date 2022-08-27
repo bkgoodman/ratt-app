@@ -47,6 +47,45 @@ from PyQt5.QtCore import QObject, QThread, pyqtSignal
 import json
 import requests
 import time
+import math
+
+class Payout(QObject):
+  vendCents=0 # IN CENTS!!
+  #payoutComplete = pyqtSignal(name="payoutComplete")
+
+  def run(self):
+      print("\n\n\n*** PAYOUT RUN ****")
+      payout = self.parent.app.config.value("Vending.Payout")
+      payoutTime = self.parent.app.config.value("Vending.PayoutTime")
+      dollars=0
+      quarters=0
+      if payout == "Dollars":
+        dollars = self.vendCents / 100
+      elif payout == "Quarters":
+        quarters = self.vendCents / 25
+      elif payout == "Both":
+        dollars = math.floor(self.vendCents / 100)
+        quarters = int((self.vendCents/25) - (dollars*4))
+        print(f"DO PAOUT CENTS={self.vendCents} DOLLARDs={dollars} QUARTERS={quarters}")
+
+      for i in range(0,dollars):
+        self.parent.pins_out[2].set(HIGH)
+        print("** DOLLAR")
+        time.sleep(payoutTime)
+        self.parent.pins_out[2].set(LOW)
+        time.sleep(payoutTime)
+
+      for i in range(0,quarters):
+        self.parent.pins_out[3].set(HIGH)
+        print("** QUARTER")
+        time.sleep(payoutTime)
+        self.parent.pins_out[3].set(LOW)
+        time.sleep(payoutTime)
+
+      print(f"PAYOUT COMPLETE {quarters} {dollars}")
+      #self.payoutComplete.emit()
+      self.parent.slotUIEvent("payoutComplete")
+
 class Worker(QObject):
     finished = pyqtSignal()
     downloadComplete = pyqtSignal(name="downloadComplete")
@@ -105,7 +144,7 @@ class Personality(PersonalitySimple):
     vendingAmount=1
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
     vendingConfirmData = pyqtSignal(str, str, str,bool, name="vendingConfirmData", arguments=['vendingAmount','surchargeAmount','totalAmount',"hasSurcharge"])
-    vendingMinMax = pyqtSignal(float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum'])
+    vendingMinMax = pyqtSignal(float, float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum','interval'])
     _vendingResult = "Indeterminiate"
     _vendingStatus = False
 
@@ -170,8 +209,8 @@ class Personality(PersonalitySimple):
             self.worker = Worker()
             self.worker.parent=self
             self.worker.moveToThread(self.thread)
-            self.thread.start()
             self.thread.started.connect(self.worker.run)
+            self.thread.start()
             self.worker.finished.connect(self.thread.quit)
             self.worker.finished.connect(self.worker.deleteLater)
             self.thread.finished.connect(self.thread.deleteLater)
@@ -210,20 +249,46 @@ class Personality(PersonalitySimple):
     #############################################
     def stateVendingComplete(self):
         if self.phENTER:
+            self.payoutDone=False
+            self.idleRequest=False
             self.logger.debug('VENDING COMPLETE Enter')
             name = self.activeMemberRecord.name
             amount = self.vendingAmount
             o = { "Member":name,"Amount":amount,"Success":self.vendingStatus,"Reason":self.vendingResult}
             self.app.mqtt.slotPublishSubtopic('vending/report', json.dumps(o))
             self.enableTool()
+
+
+            # Payout kicker
+            self.payoutThread = QThread()
+            self.payoutWorker = Payout()
+            self.payoutWorker.vendCents = amount*100
+            self.payoutWorker.parent=self
+            self.payoutWorker.moveToThread(self.payoutThread)
+            self.payoutThread.started.connect(self.payoutWorker.run)
+            self.payoutThread.start()
+            #self.payoutWorker.finished.connect(self.payoutThread.quit)
+            #self.payoutWorker.finished.connect(self.payoutWorker.deleteLater)
+            #self.payoutThread.finished.connect(self.payoutThread.deleteLater)
+            print ("INITIATED PAYOUT")
+
+
             return self.goActive()
 
         elif self.phACTIVE:
             self.logger.debug('VENDING COMPLETE active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'payoutComplete':
+              self.payoutDone=True
+              self.payoutThread.quit()
+              self.payoutThread.wait(9999999)
+              del self.payoutThread
             if self.wakereason == self.REASON_UI and self.uievent == 'Idle':
-                print('VENDING FINALLY DONE')
-                self.disableTool()
-                return self.exitAndGoto(self.STATE_IDLE)
+              self.idleRequest = True
+
+            if self.payoutDone and self.idleRequest:
+              print('VENDING FINALLY DONE')
+              self.disableTool()
+              return self.exitAndGoto(self.STATE_IDLE)
                 
 
             return False
@@ -246,7 +311,8 @@ class Personality(PersonalitySimple):
             self.vendingAmount =1
             maxCharge = self.app.config.value("Vending.VendingMaximum")
             minCharge = self.app.config.value("Vending.VendingMinimum")
-            self.vendingMinMax.emit(minCharge,maxCharge)
+            increment = self.app.config.value("Vending.Increment")
+            self.vendingMinMax.emit(minCharge,maxCharge,increment)
             return self.goActive()
 
         elif self.phACTIVE:
@@ -280,7 +346,6 @@ class Personality(PersonalitySimple):
             surcharge = self.app.config.value("Vending.VendingSurcharge")
             self.totalCharge = self.vendingAmount + surcharge
             self.vendingConfirmData.emit(f"${self.vendingAmount:0.2f}",f"${surcharge:0.2f}",f"${self.totalCharge:0.2f}",False if surcharge == 0 else True)
-            self.vendingAmount =1
             return self.goActive()
 
         elif self.phACTIVE:

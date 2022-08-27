@@ -477,9 +477,13 @@ class RattConfig(QObject):
         self.addConfig('Auth', 'ConfigCacheFile', '/data/ratt/ratt-remote.conf')
         self.addConfig('Auth', 'VendingUrlPrefix')
 
-        self.addConfigFloat('Vending', 'VendingSurcharge')
-        self.addConfigFloat('Vending', 'VendingMinimum')
-        self.addConfigFloat('Vending', 'VendingMaximum')
+        self.addConfigFloat('Vending', 'VendingSurcharge',0.0)
+        self.addConfigFloat('Vending', 'VendingMinimum',0.75)
+        self.addConfigFloat('Vending', 'VendingMaximum',5.0)
+        self.addConfigFloat('Vending', 'Default',1.0)
+        self.addConfigFloat('Vending', 'Increment',1.0)
+        self.addConfig('Vending', 'Payout',"None")
+        self.addConfigFloat('Vending', 'PayoutTime',0.5)
 
         self.addSection('MQTT')
         self.addConfig('MQTT', 'LogLevel', 'INFO')

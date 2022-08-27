@@ -46,12 +46,14 @@ View {
     property string vendingAmountString: "1.00"
     property real vendingMin: 0
     property real vendingMax: 10
+    property real vendingIncrement: 0.25
 
     Connections {
         target: personality
 	onVendingMinMax: {
 		vendingMin = vendingMinimum
 		vendingMax = vendingMaximum
+		vendingIncrement = vendingIncrement
 		}
 }
 
@@ -97,7 +99,7 @@ View {
     function keyUp(pressed) {
       if (pressed) {
 	if (vendingAmount < vendingMax) {
-        vendingAmount += 0.25
+        vendingAmount += vendingIncrement
 	}
         vendingAmountString = moneyString(vendingAmount)
         appWindow.uiEvent('VendingKeyUp');
@@ -106,7 +108,7 @@ View {
     }
     function keyDown(pressed) {
      if (pressed) {
-        vendingAmount -= 0.25
+        vendingAmount -= vendingIncrement
 	if (vendingAmount < vendingMin) {  vendingAmount = vendingMin}
         vendingAmountString = moneyString(vendingAmount)
         appWindow.uiEvent('VendingKeyDown');
