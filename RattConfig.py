@@ -527,6 +527,11 @@ class RattConfig(QObject):
         self.addConfig('Sound', 'HomingWarning', '')
         self.addConfig('Sound', 'HomingOverride', '')
         self.addConfig('Sound', 'EnableEstop', '')
+        self.addConfig('Sound', 'VendingConfirm', '')
+        self.addConfig('Sound', 'VendingCanceled', '')
+        self.addConfig('Sound', 'VendingFailed', '')
+        self.addConfig('Sound', 'VendingSuccessful', '')
+        self.addConfig('Sound', 'VendingList', '')
 
         self.addSection('Issues')
         for i in self.parser.items('Issues'):

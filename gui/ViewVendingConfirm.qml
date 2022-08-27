@@ -237,7 +237,7 @@ RowLayout {
                     horizontalAlignment: Text.AlignHCenter
                     font.pixelSize: 10
                     color: "#ffff00"
-                    font.weight: Font.Demi
+                    font.weight: Font.Normal
                                     
        }
         

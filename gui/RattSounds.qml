@@ -149,7 +149,7 @@ Item {
     }
     SoundEffect {
         id: vendingSuccessAudio
-        source: config.Sound_VendingSuccess
+        source: config.Sound_VendingSuccessful
     }
     SoundEffect {
         id: vendingFailedAudio

@@ -184,7 +184,7 @@ View {
             text: "Use arrows to adjust\nPress OK to Pay"
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 12
-            font.weight: Font.Demi
+            font.weight: Font.Normal
             color: "#ffffff"
         }
     }

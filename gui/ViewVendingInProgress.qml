@@ -50,10 +50,6 @@ View {
 	      activetext.text= "Finished";
 	      appWindow.uiEvent('DownloadFinished'); 
 	}
-	onDownloadComplete: {
-	      activetext.text= "DownloadComplete";
-	      appWindow.uiEvent('DownloadFinished'); 
-	}
 }
     function _show() {
         showTimer.start();
@@ -122,7 +118,7 @@ View {
             text: "One Moment Please"
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            font.weight: Font.Demi
+            font.weight: Font.Normal
             color: "#ffffff"
         }
 

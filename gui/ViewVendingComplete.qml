@@ -55,9 +55,9 @@ View {
 		//personality.vendingStats = status
 		isFailed = status
  		if (isFailed) {
-		    sound.vendingFailedAudio.start();
+		    sound.vendingFailedAudio.play();
 		} else {
-		    sound.vendingSuccessAudio.start();
+		    sound.vendingSuccessAudio.play();
 		}
 		}
 	}
@@ -122,7 +122,7 @@ View {
 	    id: message
             horizontalAlignment: Text.AlignHCenter
             font.pixelSize: 14
-            font.weight: Font.Demi
+            font.weight: Font.Normal
             color: "#ffffff"
         }
 
