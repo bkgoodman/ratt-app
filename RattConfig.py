@@ -475,7 +475,7 @@ class RattConfig(QObject):
         self.addConfig('Auth', 'AclCacheFile', '/data/ratt/ratt.acl')
         self.addConfig('Auth', 'ConfigUrl')
         self.addConfig('Auth', 'ConfigCacheFile', '/data/ratt/ratt-remote.conf')
-        self.addConfig('Auth', 'VendingUrlPrefix')
+        self.addConfig('Auth', 'VendingUrlPrefix','/api/v1/vending')
 
         self.addConfigFloat('Vending', 'VendingSurcharge',0.0)
         self.addConfigFloat('Vending', 'VendingMinimum',0.75)

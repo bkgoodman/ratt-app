@@ -377,6 +377,9 @@ class PersonalityBase(PersonalityStateMachine):
         self.mutex.unlock()
         self.cond.wakeAll()
 
+    def customMQTTEvent(self, subtopic, message):
+      pass
+
     # MQTT targeted event
     @pyqtSlot(str, str)
     def __slotTargetedMQTTEvent(self, subtopic, message):
@@ -406,6 +409,9 @@ class PersonalityBase(PersonalityStateMachine):
                 self.wakereason = self.REASON_LOCK_OUT_CANCELED
                 self.mutex.unlock()
                 self.cond.wakeAll()
+            else:
+                self.customMQTTEvent(subtopic,message)
+                
 
     # MQTT broadcast event
     @pyqtSlot(str, str)

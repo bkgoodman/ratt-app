@@ -103,7 +103,7 @@ View {
             property: "color"
             from: "#000000"
             to: isFailed ? "#00cc00" : "#cc0000"
-            duration: 1000
+            duration: 2000
         }
     }
     ColumnLayout {
