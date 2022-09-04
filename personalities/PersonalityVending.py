@@ -145,8 +145,8 @@ class Personality(PersonalitySimple):
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
     vendingConfirmData = pyqtSignal(str, str, str,bool, name="vendingConfirmData", arguments=['vendingAmount','surchargeAmount','totalAmount',"hasSurcharge"])
     vendingMinMax = pyqtSignal(float, float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum','interval'])
-    _vendingResult = "Indeterminiate"
-    _vendingStatus = False
+    vendingResult = "Indeterminiate"
+    vendingStatus = False
 
     def __init__(self, *args, **kwargs):
         PersonalitySimple.__init__(self, *args, **kwargs)
@@ -166,23 +166,21 @@ class Personality(PersonalitySimple):
     def vendingAmount(self, value):
         self._vendingAmount = value
 
-    @pyqtProperty(bool)
-    def vendingStatus(self):
-        return self._vendingStatus
+    # Emmit MANUALLY only @pyqtProperty(bool)
+    #def vendingStatus(self):
+    #    return self._vendingStatus
 
-    @vendingStatus.setter
-    def vendingStatus(self, value):
-        self._vendingStatus = value
-        self.vendingChanged.emit(self._vendingStatus,self._vendingResult)
+    # Emmit MANUALLY only @vendingStatus.setter
+    #@vendingStatus.setter
+    #def vendingStatus(self, value):
+    #    self._vendingStatus = value
 
-    @pyqtProperty(str, notify=vendingChanged)
-    def vendingResult(self):
-        return self._vendingResult
+    # Emmit  MANUALLY only @pyqtProperty(str, notify=vendingChanged)
 
-    @vendingResult.setter
-    def vendingResult(self, value):
-        self._vendingResult = value
-        self.vendingChanged.emit(self._vendingStatus,self._vendingResult)
+    #@vendingResult.setter
+    #def vendingResult(self, value):
+    #    self._vendingResult = value
+    #    # Emit MANUALLY self.vendingChanged.emit(self._vendingStatus,self._vendingResult)
 
     # enable tool
     def enableTool(self):
@@ -222,6 +220,7 @@ class Personality(PersonalitySimple):
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingFailed':
                 self.vendingStatus = False
                 self.vendingResult = "Payment Failed"
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 self.logger.debug('VENDING INPROGRESS FAILED')
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingSuccessful':
@@ -229,11 +228,13 @@ class Personality(PersonalitySimple):
                 self.logger.debug('VENDING INPROGRESS SUCCCEDED')
                 self.vendingStatus = True
                 self.vendingResult = "Payment Complete"
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'downloadComplete':
                 self.thread.quit()
                 self.thread.wait(9999999)
                 del self.thread
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
                 
 
@@ -320,6 +321,7 @@ class Personality(PersonalitySimple):
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
                 self.vendingResult = "Payment Aborted"
                 self.vendingStatus = False
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingConfirm':
                 va = float(self.vendingAmount)
@@ -353,6 +355,7 @@ class Personality(PersonalitySimple):
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
                 self.vendingResult = "Payment Aborted"
                 self.vendingStatus = False
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
                 va = float(self.vendingAmount)

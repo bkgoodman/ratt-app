@@ -55,9 +55,11 @@ View {
 		//personality.vendingStats = status
 		isFailed = status
  		if (isFailed) {
-		    sound.vendingFailedAudio.play();
-		} else {
 		    sound.vendingSuccessAudio.play();
+                    console.warn("** PLAY SUCCESS");
+		} else {
+		    sound.vendingFailedAudio.play();
+                    console.warn("** PLAY FAILED");
 		}
 		}
 	}
