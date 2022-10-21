@@ -86,6 +86,50 @@ class Payout(QObject):
       #self.payoutComplete.emit()
       self.parent.slotUIEvent("payoutComplete")
 
+# Query Balance
+class BalanceWorker(QObject):
+    parent = None
+
+    def run(self):
+        try:
+          """Long-running task."""
+          print ("START BalanceWorker")
+          url = self.parent.app.config.value("Auth.VendingUrlPrefix")
+          username = self.parent.app.config.value("Auth.HttpAuthUser")
+          password = self.parent.app.config.value("Auth.HttpAuthPassword")
+          name = self.parent.activeMemberRecord.name
+          tag = self.parent.activeMemberRecord.tag
+          url = f"{url}/queryBalance/{name}" # FIXME!
+          print ("BalanceWorker VENDING URL UIS",url,name,tag)
+          self.parent.vendingReason="Attempt"
+          self.parent.vendingStatus=False
+          with requests.get(url, auth=(username, password)) as conn:
+            print ("CONTENT GOT",conn.content)
+            print ("START END SLEEP")
+            if (conn.status_code >= 200) and (conn.status_code <=299):
+              # Check result
+              self.parent.balance=0
+              try:
+                vendresult = json.loads(conn.content)
+                print ("BalanceWorker",vendresult)
+                if vendresult['status'] != 'success':
+                  self.parent.vendingResult=vendresult['description']
+                  # TODO HANDLE BALANCE ERROR
+                else:
+                  self.parent.balance=vendresult['balance']
+              except BaseException as e:
+                  self.parent.vendingResult="Malformed Response"
+                  print ("BalanceWorker Vend Excetion",e)
+            else:
+              self.parent.vendingResult=f"HTTP Error {conn.status_code}"
+        except BaseException as e:
+            self.parent.vendingResult=str(e)
+            print ("BalanceWorker",e,type(e),dir(e))
+        #print ("BalanceWorker Emit",self.parent.balance)
+        self.parent.gotBalance.emit(self.parent.balance/100)
+        self.parent.slotUIEvent("gotBalance")
+
+# Original Payment
 class Worker(QObject):
     finished = pyqtSignal()
     downloadComplete = pyqtSignal(name="downloadComplete")
@@ -102,7 +146,7 @@ class Worker(QObject):
           name = self.parent.activeMemberRecord.name
           tag = self.parent.activeMemberRecord.tag
           amount = self.parent.totalCharge*100
-          url = f"{url}/{name}/{amount:0.0f}"
+          url = f"{url}/{name}/{amount:0.0f}" # FIXME!
           print ("VENDING URL UIS",url,name,tag,amount)
           self.parent.vendingReason="Attempt"
           self.parent.vendingStatus=False
@@ -138,15 +182,20 @@ class Personality(PersonalitySimple):
     PERSONALITY_DESCRIPTION = 'Vending'
     STATE_VENDING_LIST = 'VendingList'
     STATE_VENDING_CONFIRM = 'VendingConfirm'
+    STATE_VENDING_CONFIRM_REUP = 'VendingConfirmReup'
+    STATE_VENDING_REUP = 'VendingReup'
     STATE_VENDING_INPROGRESS = 'VendingInProgress'
-    STATE_VENDING_CONFIRM = 'VendingConfirm'
     STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
+    purchaseAmount=0
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
-    vendingConfirmData = pyqtSignal(str, str, str,bool, name="vendingConfirmData", arguments=['vendingAmount','surchargeAmount','totalAmount',"hasSurcharge"])
+    vendingConfirmData = pyqtSignal(float,float,float, name="vendingConfirmData", arguments=['currentBalance','vendingAmount',"newBalance"])
     vendingMinMax = pyqtSignal(float, float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum','interval'])
     vendingResult = "Indeterminiate"
     vendingStatus = False
+    gotBalance = pyqtSignal(int,name="gotBalance", arguments=['currentBalance'])
+    getPurchaseData = pyqtSignal(int,float,name="getPurchaseData", arguments=['currentBalance','currentVendingAmount'])
+    VendingConfirmReup = pyqtSignal(float,float,float,float,float,float,name="vendingConfirmReup", arguments=['curBal','thisPurch','svgChg','addAmt','totalChg','newBal'])
 
     def __init__(self, *args, **kwargs):
         PersonalitySimple.__init__(self, *args, **kwargs)
@@ -156,7 +205,16 @@ class Personality(PersonalitySimple):
         self.states[self.STATE_VENDING_INPROGRESS] = self.stateVendingInProgress
         self.states[self.STATE_VENDING_COMPLETE] = self.stateVendingComplete
         self.states[self.STATE_VENDING_CONFIRM] = self.stateVendingConfirm
+        self.states[self.STATE_VENDING_CONFIRM_REUP] = self.stateVendingConfirmReup
+        self.states[self.STATE_VENDING_REUP] = self.stateVendingReup
 
+    @pyqtProperty(float)
+    def reupAmount(self):
+        return self._reupAmount
+
+    @reupAmount.setter
+    def reupAmount(self, value):
+        self._reupAmount = value
 
     @pyqtProperty(float)
     def vendingAmount(self):
@@ -197,6 +255,34 @@ class Personality(PersonalitySimple):
 
 
 
+    #############################################
+    ## STATE_VENDING_REUP (Repelenish)
+    #############################################
+    def stateVendingReup(self):
+        if self.phENTER:
+            self.logger.debug('VENDING ReUp Enter')
+            self.getPurchaseData.emit(self.balance/100,self.vendingAmount)
+            return self.goActive()
+
+        elif self.phACTIVE:
+            self.logger.debug('VENDING ReUp active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
+                self.vendingResult = "Payment Aborted"
+                self.vendingStatus = False
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+            elif self.wakereason == self.REASON_UI and self.uievent == 'ReupAccepted':
+                va = float(self.reupAmount)
+                print('VENDING REUP CONFIRMED',va,type(self.reupAmount))
+                return self.exitAndGoto(self.STATE_VENDING_CONFIRM_REUP)
+                
+
+            return False
+
+        elif self.phEXIT:
+            self.logger.debug('VENDING CONFIRM exit')
+            self.pin_led1.set(LOW)
+            return self.goNextState()
 
     #############################################
     ## STATE_VENDING_INPROGRESS
@@ -260,29 +346,33 @@ class Personality(PersonalitySimple):
             self.enableTool()
 
 
-            # Payout kicker
-            self.payoutThread = QThread()
-            self.payoutWorker = Payout()
-            self.payoutWorker.vendCents = amount*100
-            self.payoutWorker.parent=self
-            self.payoutWorker.moveToThread(self.payoutThread)
-            self.payoutThread.started.connect(self.payoutWorker.run)
-            self.payoutThread.start()
-            #self.payoutWorker.finished.connect(self.payoutThread.quit)
-            #self.payoutWorker.finished.connect(self.payoutWorker.deleteLater)
-            #self.payoutThread.finished.connect(self.payoutThread.deleteLater)
-            print ("INITIATED PAYOUT")
+            if (self.vendingStatus == True):
+              # Payout kicker
+              self.payoutThread = QThread()
+              self.payoutWorker = Payout()
+              self.payoutWorker.vendCents = amount*100
+              self.payoutWorker.parent=self
+              self.payoutWorker.moveToThread(self.payoutThread)
+              self.payoutThread.started.connect(self.payoutWorker.run)
+              self.payoutThread.start()
+              #self.payoutWorker.finished.connect(self.payoutThread.quit)
+              #self.payoutWorker.finished.connect(self.payoutWorker.deleteLater)
+              #self.payoutThread.finished.connect(self.payoutThread.deleteLater)
+              print ("INITIATED PAYOUT")
 
 
             return self.goActive()
 
         elif self.phACTIVE:
             self.logger.debug('VENDING COMPLETE active')
-            if self.wakereason == self.REASON_UI and self.uievent == 'payoutComplete':
-              self.payoutDone=True
-              self.payoutThread.quit()
-              self.payoutThread.wait(9999999)
-              del self.payoutThread
+            if self.vendingStatus:
+              if self.wakereason == self.REASON_UI and self.uievent == 'payoutComplete':
+                self.payoutDone=True
+                self.payoutThread.quit()
+                self.payoutThread.wait(9999999)
+                del self.payoutThread
+            else:
+                self.payoutDone=True
             if self.wakereason == self.REASON_UI and self.uievent == 'Idle':
               self.idleRequest = True
 
@@ -314,10 +404,24 @@ class Personality(PersonalitySimple):
             minCharge = self.app.config.value("Vending.VendingMinimum")
             increment = self.app.config.value("Vending.Increment")
             self.vendingMinMax.emit(minCharge,maxCharge,increment)
+
+            self.thread = QThread()
+            self.worker = BalanceWorker()
+            self.worker.parent=self
+            self.worker.moveToThread(self.thread)
+            self.thread.started.connect(self.worker.run)
+            self.thread.start()
+            #self.worker.gotBalance.connect(self.worker.deleteLater)
+
             return self.goActive()
 
         elif self.phACTIVE:
             self.logger.debug('VENDING LIST active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'gotBalance':
+                self.thread.quit()
+                self.thread.wait(9999999)
+                del self.thread
+                #self.gotBalance.emit(777)
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
                 self.vendingResult = "Payment Aborted"
                 self.vendingStatus = False
@@ -325,8 +429,12 @@ class Personality(PersonalitySimple):
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingConfirm':
                 va = float(self.vendingAmount)
-                print('VENDING ACCEPTED',va,type(self.vendingAmount))
-                return self.exitAndGoto(self.STATE_VENDING_CONFIRM)
+                #print('VENDING ACCEPTED',self.vendingAmount,"with balance",self.balance)
+                if (self.vendingAmount*100) <= self.balance:
+                  return self.exitAndGoto(self.STATE_VENDING_CONFIRM)
+                else:
+                  self.purchaseEmount = self.vendingAmount
+                  return self.exitAndGoto(self.STATE_VENDING_REUP)
                 
 
             return False
@@ -337,6 +445,40 @@ class Personality(PersonalitySimple):
             return self.goNextState()
 
     #############################################
+    ## STATE_VENDING_CONFIRM_REUP
+    #############################################
+    def stateVendingConfirmReup(self):
+        if self.phENTER:
+            self.logger.debug('VENDING CONFIRM REUP Enter')
+            self.telemetryEvent.emit('personality/login', json.dumps({'allowed': True, 'member': self.activeMemberRecord.name}))
+            self.activeMemberRecord.loggedIn = True
+            self.pin_led1.set(HIGH)
+            surcharge = self.app.config.value("Vending.VendingSurcharge")
+            self.totalCharge = self.reupAmount + surcharge
+            newBalance = (self.balance/100) + self.reupAmount - (self.vendingAmount)
+            self.VendingConfirmReup.emit(self.balance/100,self.vendingAmount,surcharge,self.reupAmount,self.totalCharge,newBalance)
+            return self.goActive()
+
+        elif self.phACTIVE:
+            self.logger.debug('VENDING CONFIRM REUP active')
+            if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
+                self.vendingResult = "Payment Aborted"
+                self.vendingStatus = False
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
+            elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
+                va = float(self.vendingAmount)
+                print('VENDING CONFIRMED REUP ',va,type(self.vendingAmount))
+                return self.exitAndGoto(self.STATE_VENDING_INPROGRESS)
+                
+
+            return False
+
+        elif self.phEXIT:
+            self.logger.debug('VENDING CONFIRM REUP exit')
+            self.pin_led1.set(LOW)
+            return self.goNextState()
+    #############################################
     ## STATE_VENDING_CONFIRM
     #############################################
     def stateVendingConfirm(self):
@@ -346,8 +488,10 @@ class Personality(PersonalitySimple):
             self.activeMemberRecord.loggedIn = True
             self.pin_led1.set(HIGH)
             surcharge = self.app.config.value("Vending.VendingSurcharge")
-            self.totalCharge = self.vendingAmount + surcharge
-            self.vendingConfirmData.emit(f"${self.vendingAmount:0.2f}",f"${surcharge:0.2f}",f"${self.totalCharge:0.2f}",False if surcharge == 0 else True)
+            self.totalCharge = self.vendingAmount 
+            #self.vendingConfirmData.emit(f"${self.vendingAmount:0.2f}",f"${surcharge:0.2f}",f"${self.totalCharge:0.2f}",False if surcharge == 0 else True)
+            newBal = (self.balance/100) - self.vendingAmount
+            self.vendingConfirmData.emit(self.balance/100,self.vendingAmount,newBal)
             return self.goActive()
 
         elif self.phACTIVE:

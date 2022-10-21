@@ -40,10 +40,12 @@ import QtQuick.Layouts 1.3
 
 View {
     id: root
-    name: "Vending"
+    name: "Recharge"
 
-    property real vendingAmount: 1.00
-    property string vendingAmountString: "1.00"
+    property real reupAmount: 5.00
+    property real vendingAmount
+    property string reupAmountString: "5.00"
+    property string newBalanceString: "-.--"
     property real vendingMin: 0
     property real vendingMax: 10
     property real vendingIncrement: 0.25
@@ -57,10 +59,13 @@ View {
 		vendingIncrement = vendingIncrement
                 console.info("GOT CURRENT BALANCE MinMax")
 		}
-	onGotBalance: {
-                // balance
+	onGetPurchaseData: {
+                // currentBalance, currentVendingAmount
                 balance=currentBalance
-                console.info("GOT CURRENT BALANCE")
+                vendingAmount=currentVendingAmount
+                console.info("GOT PURCHASE DATA")
+                reupAmountString = moneyString(reupAmount)
+                newBalanceString = moneyString((balance)+reupAmount-vendingAmount)
 		}
 }
 
@@ -72,7 +77,7 @@ View {
       status.keyDownActive = true;
 
       sound.vendingListAudio.play();
-      vendingAmount = 1;
+      reupAmount = 5;
       timeoutTimer.start();
       status.keyEscLabel = "\u2716"
       status.keyReturnLabel = "OK"
@@ -80,7 +85,7 @@ View {
 
     function moneyString(val) {
         var dollars   = Math.floor(val);
-        var cents = (val - dollars)*100;
+        var cents = Math.floor(val*100) - Math.floor(dollars*100);
 
         if (cents < 10) {cents = "0" + cents;}
         return dollars.toString() + '.' + cents  ;
@@ -95,8 +100,9 @@ View {
 
     function keyEscape(pressed) {
       if (pressed ) {
-	      vendingAmount=1;
-	      vendingAmountString = moneyString(vendingAmount)
+	      reupAmount=1;
+	      reupAmountString = moneyString(reupAmount)
+	      newBalanceString = moneyString(reupAmount)
 	      sound.vendingCanceledAudio.play();
 	      appWindow.uiEvent('VendingAborted'); 
 	}
@@ -105,20 +111,29 @@ View {
 
     function keyUp(pressed) {
       if (pressed) {
-	if (vendingAmount < vendingMax) {
-        vendingAmount += vendingIncrement
+        timeoutTimer.restart();
+	if (reupAmount < vendingMax) {
+        reupAmount += vendingIncrement
 	}
-        vendingAmountString = moneyString(vendingAmount)
+        reupAmountString = moneyString(reupAmount)
+        console.info(balance,reupAmount,vendingAmount, (balance)+reupAmount-vendingAmount)
+        newBalanceString = moneyString((balance)+reupAmount-vendingAmount)
         appWindow.uiEvent('VendingKeyUp');
       }
       return true;
     }
     function keyDown(pressed) {
      if (pressed) {
-        vendingAmount -= vendingIncrement
-	if (vendingAmount < vendingMin) {  vendingAmount = vendingMin}
-        vendingAmountString = moneyString(vendingAmount)
-        appWindow.uiEvent('VendingKeyDown');
+        timeoutTimer.restart()
+        if ((balance+reupAmount-(vendingAmount+vendingIncrement)) >= 0) {
+          reupAmount -= vendingIncrement
+          var newamt = (balance)+reupAmount-vendingAmount
+          if (reupAmount < vendingMin) {  reupAmount = vendingMin}
+          reupAmountString = moneyString(reupAmount)
+          newBalanceString = moneyString(newamt)
+          appWindow.uiEvent('VendingKeyDown');
+        }
+        
       }
       return true;
     }
@@ -126,10 +141,10 @@ View {
 
     function keyReturn(pressed) {
         if (pressed) {
-          personality.vendingAmount = vendingAmount
-          vendingAmount=1;
-          vendingAmountString = moneyString(vendingAmount)
-          appWindow.uiEvent('VendingConfirm');
+          personality.reupAmount = reupAmount
+          reupAmount=1;
+          reupAmountString = moneyString(reupAmount)
+          appWindow.uiEvent('ReupAccepted');
         } 
       return true;
     }
@@ -143,7 +158,7 @@ View {
       onTriggered: {
           stop();
           //appWindow.uiEvent('VendingAborted');
-          console.info("VendingList Timeout Timer\n");
+          console.info("VendingReup Timeout Timer\n");
           keyEscape(true);
       }
     }
@@ -170,36 +185,64 @@ View {
 
     ColumnLayout {
         anchors.fill: parent
+        spacing: 2
         Label {
             Layout.fillWidth: true
+            Layout.maximumHeight: 10
+            Layout.preferredHeight: 10
             text: "Current Balance: $"+moneyString(balance)
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 12
+            font.pixelSize: 10
             font.weight: Font.Bold
             color: "#ffff00"
         }
         Label {
             Layout.fillWidth: true
-            text: "Enter Amount"
+            Layout.maximumHeight: 10
+            Layout.preferredHeight: 10
+            text: "Purchase: $"+moneyString(vendingAmount)
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 18
+            font.pixelSize: 10
             font.weight: Font.Bold
-            color: "#ffffff"
+            color: "#ff8080"
         }
         Label {
             Layout.fillWidth: true
-            id: vendAmount
-            text: "$"+vendingAmountString
+            Layout.maximumHeight: 18
+            Layout.preferredHeight: 18
+            text: "Amount to Add"
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 20
+            font.pixelSize: 18
+            font.weight: Font.Bold
+            color: "#80ff80"
+        }
+        Label {
+            Layout.fillWidth: true
+            Layout.maximumHeight: 18
+            Layout.preferredHeight: 18
+
+            id: vendAmount
+            text: "$"+reupAmountString
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 18
             font.weight: Font.DemiBold
+            color: "#80ff80"
+        }
+        Label {
+            Layout.fillWidth: true
+            Layout.maximumHeight: 10
+            Layout.preferredHeight: 10
+            text: "New Balance: $"+newBalanceString
+            horizontalAlignment: Text.AlignHCenter
+            font.pixelSize: 10
+            font.weight: Font.Normal
             color: "#ffff00"
         }
         Label {
             Layout.fillWidth: true
             text: "Select amount then press OK"
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 12
+            font.pixelSize: 10
             font.weight: Font.Normal
             color: "#ffffff"
         }

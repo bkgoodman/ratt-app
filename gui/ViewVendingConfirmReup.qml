@@ -38,6 +38,7 @@ import QtQuick 2.6
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
 
+
 View {
     function moneyString(val) {
         var dollars   = Math.floor(val);
@@ -47,23 +48,22 @@ View {
         return dollars.toString() + '.' + cents  ;
     }
     id: root
-    name: "Vending Confirm"
+    name: "Vending Confirm Reup"
 
     color: "#0000cc"
-
-    property string vendingAmount
-    property string surchargeAmount
-    property string totalAmount
 
 
     Connections {
         target: personality
-	onVendingConfirmData: {
-		// currentBalance, vendingAmout, newBalance
+	onVendingConfirmReup: {
+		// curBal, thisPurch, svgChg, addAmt, totalChg, newBal
 		// Doesn't do anything??
-                amountText.text = "$"+moneyString(vendingAmount)
-                oldBalanceText.text = "$"+moneyString(currentBalance)
-                newBalanceText.text = "$"+moneyString(newBalance)
+                curBalanceText.text = moneyString(curBal)
+                purchaseText.text = moneyString(thisPurch)
+                amountText.text = moneyString(addAmt)
+                surchargeText.text = moneyString(svgChg)
+                totalText.text = moneyString(totalChg)
+                newBalanceText.text = moneyString(newBal)
 		status.keyReturnLabel = "Pay"
 	   }
 	}
@@ -75,12 +75,13 @@ View {
       status.keyReturnActive = true; 
       status.keyDownActive = false;
       status.keyUpActive = false;
+      status.keyReturnLabel = "Pay"
 
     }
 
     function done() {
 		showTimer.stop();
-		appWindow.uiEvent('VendingAccepted'); 
+		status.keyReturnLabel =  "\u25cf"
     }
 
     function keyEscape(pressed) {
@@ -125,34 +126,63 @@ View {
     }
 
     ColumnLayout {
+        spacing:2
 
-	Item {
+    Item {
         Layout.preferredWidth: 160
-        Layout.maximumHeight: 12
-        Layout.preferredHeight: 12
+        Layout.maximumHeight: 8
+        Layout.preferredHeight: 8
         Label {
             width: parent.width
             Layout.fillWidth: true
             Layout.fillHeight: true
-            text: "Confirm Payment"
+            text: "Press \"Pay\" To Confirm"
             horizontalAlignment: Text.AlignHCenter
-            font.pixelSize: 18  
+            font.pixelSize: 12  
             font.weight: Font.Bold
             color: "#ffff00"
         }
-	}
-        
+    }
       
+    RowLayout {
+        Layout.preferredHeight: 10
+        Layout.maximumHeight: 10
+        Item {
+          Layout.preferredWidth: 96
+             Label {
+                          width: parent.width
+                          text: "Cur Balance:"
+                          horizontalAlignment: Text.AlignRight
+                          font.pixelSize: 12
+                          color: "#ffffff"
+                          font.weight: Font.Normal
+                                          
+             }
+        }    
+        Item {
+          Layout.preferredWidth: 128
+             Label {
+                 id: curBalanceText
+                 text:"--"
+                          horizontalAlignment: Text.AlignRight
+                          font.pixelSize: 12
+                          color: "#ffffff"
+             }
+        }    
+    } // End Rowlayout
+
 RowLayout {
             Layout.preferredHeight: 10
+        Layout.maximumHeight: 10
+//visible: applySurcharge
     Item {
     Layout.preferredWidth: 96
        Label {
                     width: parent.width
-                    text: "Cur Balance:"
+                    text: "This Purchase:"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
-                    color: "#ffff00"
+                    font.pixelSize: 12
+                    color: "#ff8080"
                     font.weight: Font.Normal
                                     
        }
@@ -161,25 +191,27 @@ RowLayout {
     Item {
     Layout.preferredWidth: 128
        Label {
-	   id: oldBalanceText
+	   id: purchaseText
            text:"--"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
-                    color: "#ffffff"
+                    font.pixelSize: 12
+                    color: "#ff8080"
+                    font.weight: Font.Bold
        }
         
     }    
 }
 
 RowLayout {
-            Layout.preferredHeight: 10
+        Layout.preferredHeight: 10
+        Layout.maximumHeight: 10
     Item {
     Layout.preferredWidth: 96
        Label {
                     width: parent.width
-                    text: "Purchase:"
+                    text: "Amount to Add:"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
+                    font.pixelSize: 12
                     color: "#ffff00"
                     font.weight: Font.Normal
                                     
@@ -190,25 +222,88 @@ RowLayout {
     Layout.preferredWidth: 128
        Label {
 	   id: amountText
-           text:"--"
+           text:"$-.--"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
-                    color: "#80FF80"
-                    font.weight: Font.Bold
+                    font.pixelSize: 12
+                    color: "#00ff00"
+                    font.weight: Font.Normal
+       }
+    }    
+}
+RowLayout {
+        Layout.preferredHeight: 10
+        Layout.maximumHeight: 10
+    Item {
+    Layout.preferredWidth: 96
+       Label {
+                    width: parent.width
+                    text: "Service Fee:"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 12
+                    color: "#ffff00"
+                    font.weight: Font.Normal
+                                    
+       }
+        
+    }    
+    Item {
+    Layout.preferredWidth: 128
+       Label {
+	   id: surchargeText
+           text:"-.--"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 12
+                    color: "#00ff00"
+                    font.weight: Font.Normal
        }
         
     }    
 }
+
 RowLayout {
-            Layout.preferredHeight: 18
+        Layout.preferredHeight: 10
+        Layout.maximumHeight: 10
+    Item {
+    Layout.preferredWidth: 96
+       Label {
+                    width: parent.width
+                    text: "Total Charge:"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 12
+                    color: "#ffff00"
+                    font.weight: Font.Normal
+                                    
+       }
+        
+    }    
+    Item {
+    Layout.preferredWidth: 128
+       Label {
+	   id: totalText
+           text:"-.--"
+                    horizontalAlignment: Text.AlignRight
+                    font.pixelSize: 12
+                    color: "#00ff00"
+                    font.weight: Font.Bold
+       }
+    }    
+}
+
+
+
+
+
+RowLayout {
+    Layout.preferredHeight: 10
+    Layout.maximumHeight: 10
     Item {
     Layout.preferredWidth: 96
        Label {
                     width: parent.width
                     text: "New Balance:"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
-                    color: "#ffff00"
+                    font.pixelSize: 12
+                    color: "#ffffff"
                     font.weight: Font.Normal
                                     
        }
@@ -220,33 +315,13 @@ RowLayout {
 	   id: newBalanceText
            text:"--"
                     horizontalAlignment: Text.AlignRight
-                    font.pixelSize: 14
-                    color: "#00ff00"
+                    font.pixelSize: 12
+                    color: "#ffffff"
                     font.weight: Font.Normal
        }
         
     }    
 }
 
-
-RowLayout {
-            Layout.preferredHeight: 22
-    Item {
-        Layout.preferredWidth: 160
-        Layout.maximumHeight: 18
-        Layout.preferredHeight: 18
-
-       Label {
-                    width: parent.width
-                    text: "Press \"Pay\" to Confirm"
-                    horizontalAlignment: Text.AlignHCenter
-                    font.pixelSize: 10
-                    color: "#ffff00"
-                    font.weight: Font.Normal
-                                    
-       }
-        
-    } 
-    }
         }
-        }
+}

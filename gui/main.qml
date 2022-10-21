@@ -107,8 +107,14 @@ ApplicationWindow {
                 case "VendingList":
                     switchTo(viewVendingList);
                     break;
+                case "VendingConfirmReup":
+                    switchTo(viewVendingConfirmReup);
+                    break;
                 case "VendingConfirm":
                     switchTo(viewVendingConfirm);
+                    break;
+                case "VendingReup":
+                    switchTo(viewVendingReup);
                     break;
                 case "VendingComplete":
                     switchTo(viewVendingComplete);
@@ -270,6 +276,14 @@ ApplicationWindow {
                 }
                 ViewVendingConfirm {
                     id: viewVendingConfirm
+                    visible: false
+                }
+                ViewVendingConfirmReup {
+                    id: viewVendingConfirmReup
+                    visible: false
+                }
+                ViewVendingReup {
+                    id: viewVendingReup
                     visible: false
                 }
                 ViewAccess {
