@@ -146,11 +146,32 @@ class Worker(QObject):
           name = self.parent.activeMemberRecord.name
           tag = self.parent.activeMemberRecord.tag
           amount = self.parent.totalCharge*100
-          url = f"{url}/{name}/{amount:0.0f}" # FIXME!
           print ("VENDING URL UIS",url,name,tag,amount)
           self.parent.vendingReason="Attempt"
           self.parent.vendingStatus=False
-          with requests.get(url, auth=(username, password)) as conn:
+          headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+
+          if (self.parent.vendingOp == "purchase"):
+            data = {'amount':amount,'prevBalance':self.parent.balance}
+            url = f"{url}/chargeAccount/{name}" 
+          elif (self.parent.vendingOp == "reup"):
+            surcharge = self.parent.app.config.value("Vending.VendingSurcharge")
+            totalCharge = self.parent.reupAmount + surcharge
+            newBalance = (self.parent.balance/100) + self.parent.reupAmount - (self.parent.vendingAmount)
+            data = {"addAmount": int(100*self.parent.reupAmount), "totalCharge":int(100*totalCharge), "prevBalance":self.parent.balance, 
+              "serviceFee":(100*surcharge),"purchaseAmt":int(100*self.parent.vendingAmount), "newBalance":int(100*newBalance)}
+            print ("VENDING REUP REQUEST",data)
+            url = f"{url}/reupBalance/{name}"
+          else:
+            self.finished.emit()
+            self.downloadComplete.emit()
+            self.parent.slotUIEvent("downloadComplete")
+            self.parent.vendingOp = "none"
+            self.parent.vendingStatus=True
+            self.parent.vendingResult="Internal Error"
+            self.logger.error('VENDING from invalid state')
+            return
+          with requests.post(url, headers=headers,data=json.dumps(data), auth=(username, password)) as conn:
             print ("CONTENT GOT",conn.content)
             print ("START END SLEEP")
             if (conn.status_code >= 200) and (conn.status_code <=299):
@@ -174,6 +195,7 @@ class Worker(QObject):
         self.finished.emit()
         self.downloadComplete.emit()
         self.parent.slotUIEvent("downloadComplete")
+        self.parent.vendingOp = "none"
 
 class Personality(PersonalitySimple):
     #############################################
@@ -193,6 +215,7 @@ class Personality(PersonalitySimple):
     vendingMinMax = pyqtSignal(float, float, float, name="vendingMinMax", arguments=['vendingMinimum','vendingMaximum','interval'])
     vendingResult = "Indeterminiate"
     vendingStatus = False
+    vendingOp = "none"
     gotBalance = pyqtSignal(int,name="gotBalance", arguments=['currentBalance'])
     getPurchaseData = pyqtSignal(int,float,name="getPurchaseData", arguments=['currentBalance','currentVendingAmount'])
     VendingConfirmReup = pyqtSignal(float,float,float,float,float,float,name="vendingConfirmReup", arguments=['curBal','thisPurch','svgChg','addAmt','totalChg','newBal'])
@@ -323,7 +346,6 @@ class Personality(PersonalitySimple):
                 self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
                 
-
             return False
 
         elif self.phEXIT:
@@ -467,6 +489,7 @@ class Personality(PersonalitySimple):
                 self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
+                self.vendingOp = "reup"
                 va = float(self.vendingAmount)
                 print('VENDING CONFIRMED REUP ',va,type(self.vendingAmount))
                 return self.exitAndGoto(self.STATE_VENDING_INPROGRESS)
@@ -504,6 +527,7 @@ class Personality(PersonalitySimple):
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingAccepted':
                 va = float(self.vendingAmount)
                 print('VENDING CONFIRMED',va,type(self.vendingAmount))
+                self.vendingOp = "purchase"
                 return self.exitAndGoto(self.STATE_VENDING_INPROGRESS)
                 
 
