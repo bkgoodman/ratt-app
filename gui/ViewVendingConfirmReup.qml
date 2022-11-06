@@ -105,7 +105,7 @@ View {
 
     Timer {
         id: showTimer
-        interval: 20000
+        interval: 30000
         repeat: false
         running: false
         onTriggered: {

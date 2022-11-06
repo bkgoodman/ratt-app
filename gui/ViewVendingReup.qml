@@ -76,7 +76,7 @@ View {
       status.keyUpActive = true;
       status.keyDownActive = true;
 
-      sound.vendingListAudio.play();
+      sound.vendingAcctBalanceLowAudio.play();
       reupAmount = 5;
       timeoutTimer.start();
       status.keyEscLabel = "\u2716"
@@ -94,7 +94,7 @@ View {
     function _hide() {
       timeoutTimer.stop();
 
-      sound.vendingListAudio.stop();
+      sound.vendingAcctBalanceLowAudio.stop();
 
     }
 
@@ -152,7 +152,7 @@ View {
 
     Timer {
       id: timeoutTimer
-      interval: 25000
+      interval: 30000
       running: false
       repeat: false
       onTriggered: {

@@ -357,8 +357,8 @@ class RattConfig(QObject):
         return self.config['Sound.VendingCanceled']
 
     @pyqtProperty(str, notify=configChanged)
-    def Sound_VendingList(self):
-        return self.config['Sound.VendingList']
+    def Sound_VendingAcctBalanceLow(self):
+        return self.config['Sound.VendingAcctBalanceLow']
 
     @pyqtProperty(str, notify=configChanged)
     def Sound_VendingConfirm(self):

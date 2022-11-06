@@ -76,8 +76,8 @@ View {
 
     function done() {
 		showTimer.stop();
-		 sound.vendingFailedAudio.stop();
-		 sound.vendingSuccessAudio.stop();
+		sound.vendingFailedAudio.stop();
+		sound.vendingSuccessAudio.stop();
       		status.keyEscLabel = "\u2716"
 		appWindow.uiEvent('Idle'); 
     }

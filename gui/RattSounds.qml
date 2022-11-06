@@ -160,8 +160,8 @@ Item {
         source: config.Sound_VendingCanceled
     }
     SoundEffect {
-        id: vendingListAudio
-        source: config.Sound_VendingList
+        id: vendingAcctBalanceLowAudio
+        source: config.Sound_VendingAcctBalanceLow
     }
     SoundEffect {
         id: vendingConfirmAudio
