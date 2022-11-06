@@ -156,6 +156,10 @@ Item {
         source: config.Sound_VendingFailed
     }
     SoundEffect {
+        id: vendingListAudio
+        source: config.Sound_VendingList
+    }
+    SoundEffect {
         id: vendingCanceledAudio
         source: config.Sound_VendingCanceled
     }
