@@ -61,11 +61,19 @@ View {
 		}
 	onGetPurchaseData: {
                 // currentBalance, currentVendingAmount
+
+                // If new balance would go negative - adjust amount
                 balance=currentBalance
                 vendingAmount=currentVendingAmount
+
+                var nb = (balance+reupAmount-vendingAmount)
+                if (nb < 0) {
+                  reupAmount -= nb;
+                  nb=0;
+                }
                 console.info("GOT PURCHASE DATA")
                 reupAmountString = moneyString(reupAmount)
-                newBalanceString = moneyString((balance)+reupAmount-vendingAmount)
+                newBalanceString = moneyString(nb)
 		}
 }
 

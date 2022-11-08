@@ -63,6 +63,7 @@ Item {
     property alias vendingConfirmAudio: vendingConfirmAudio
     property alias vendingListAudio: vendingListAudio
     property alias vendingCanceledAudio: vendingCanceledAudio
+    property alias vendingAcctBalanceLowAudio: vendingAcctBalanceLowAudio
     
     Component.onCompleted: {
       if (config.Sound_EnableSilenceLoop) {

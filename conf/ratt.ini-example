@@ -238,6 +238,12 @@ VendingIncrement=0.25
 ; PayoutTime - Time (seconds) betweens payouts
 ; PayoutTime=0.5
 
+; Stripe Product Code - If not specified, Authit will set a default
+; Product=prod_1234
+
+; Comment that will show up in purchase record
+; Comment=Vendbot
+
 ;;;;;;;;;;;;
 [MQTT]
 ; Loglevel[DEBUG|INFO|WARNING|ERROR] - default=INFO

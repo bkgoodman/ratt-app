@@ -56,17 +56,14 @@ View {
 		isFailed = status
  		if (isFailed) {
 		    sound.vendingSuccessAudio.play();
-                    console.warn("** PLAY SUCCESS");
 		} else {
 		    sound.vendingFailedAudio.play();
-                    console.warn("** PLAY FAILED");
 		}
 		}
 	}
 
     function _show() {
       showTimer.start();
-       //sound.homingWarningAudio.play();
       status.keyEscActive = true;
       status.keyDownActive = false;
       status.keyUpActive = false;

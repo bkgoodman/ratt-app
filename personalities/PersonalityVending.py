@@ -117,6 +117,7 @@ class BalanceWorker(QObject):
                   # TODO HANDLE BALANCE ERROR
                 else:
                   self.parent.balance=vendresult['balance']
+                  self.parent.lastLog=vendresult['lastLog']
               except BaseException as e:
                   self.parent.vendingResult="Malformed Response"
                   print ("BalanceWorker Vend Excetion",e)
@@ -152,24 +153,27 @@ class Worker(QObject):
           headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
           if (self.parent.vendingOp == "purchase"):
-            data = {'amount':amount,'prevBalance':self.parent.balance}
+            data = {"lastLog":self.parent.lastLog,'amount':amount,'prevBalance':self.parent.balance}
             url = f"{url}/chargeAccount/{name}" 
           elif (self.parent.vendingOp == "reup"):
             surcharge = self.parent.app.config.value("Vending.VendingSurcharge")
             totalCharge = self.parent.reupAmount + surcharge
             newBalance = (self.parent.balance/100) + self.parent.reupAmount - (self.parent.vendingAmount)
-            data = {"addAmount": int(100*self.parent.reupAmount), "totalCharge":int(100*totalCharge), "prevBalance":self.parent.balance, 
+            data = {"lastLog":self.parent.lastLog,"addAmount": int(100*self.parent.reupAmount), "totalCharge":int(100*totalCharge), "prevBalance":self.parent.balance, 
               "serviceFee":(100*surcharge),"purchaseAmt":int(100*self.parent.vendingAmount), "newBalance":int(100*newBalance)}
             print ("VENDING REUP REQUEST",data)
             url = f"{url}/reupBalance/{name}"
           else:
+            self.parent.slotUIEvent("downloadComplete")
+            self.parent.vendingOp = "none"
+            self.parent.lastLog = -1
+            self.parent.vendingStatus=False
+            self.parent.vendingResult="Internal Error"
+            self.logger.error('VENDING from invalid state')
+            self.parent.vendingOp = "none"
             self.finished.emit()
             self.downloadComplete.emit()
             self.parent.slotUIEvent("downloadComplete")
-            self.parent.vendingOp = "none"
-            self.parent.vendingStatus=True
-            self.parent.vendingResult="Internal Error"
-            self.logger.error('VENDING from invalid state')
             return
           with requests.post(url, headers=headers,data=json.dumps(data), auth=(username, password)) as conn:
             print ("CONTENT GOT",conn.content)
@@ -192,10 +196,10 @@ class Worker(QObject):
         except BaseException as e:
             self.parent.vendingResult=str(e)
             print (e,type(e),dir(e))
+        self.parent.vendingOp = "none"
         self.finished.emit()
         self.downloadComplete.emit()
         self.parent.slotUIEvent("downloadComplete")
-        self.parent.vendingOp = "none"
 
 class Personality(PersonalitySimple):
     #############################################
@@ -329,14 +333,20 @@ class Personality(PersonalitySimple):
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingFailed':
                 self.vendingStatus = False
                 self.vendingResult = "Payment Failed"
-                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 self.logger.debug('VENDING INPROGRESS FAILED')
+                self.thread.quit()
+                self.thread.wait(9999999)
+                del self.thread
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'VendingSuccessful':
                 va = float(self.totalCharge)
                 self.logger.debug('VENDING INPROGRESS SUCCCEDED')
                 self.vendingStatus = True
                 self.vendingResult = "Payment Complete"
+                self.thread.quit()
+                self.thread.wait(9999999)
+                del self.thread
                 self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
                 return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             elif self.wakereason == self.REASON_UI and self.uievent == 'downloadComplete':
@@ -358,7 +368,6 @@ class Personality(PersonalitySimple):
     #############################################
     def stateVendingComplete(self):
         if self.phENTER:
-            self.payoutDone=False
             self.idleRequest=False
             self.logger.debug('VENDING COMPLETE Enter')
             name = self.activeMemberRecord.name
@@ -370,6 +379,7 @@ class Personality(PersonalitySimple):
 
             if (self.vendingStatus == True):
               # Payout kicker
+              self.payoutDone=False
               self.payoutThread = QThread()
               self.payoutWorker = Payout()
               self.payoutWorker.vendCents = amount*100
@@ -377,10 +387,9 @@ class Personality(PersonalitySimple):
               self.payoutWorker.moveToThread(self.payoutThread)
               self.payoutThread.started.connect(self.payoutWorker.run)
               self.payoutThread.start()
-              #self.payoutWorker.finished.connect(self.payoutThread.quit)
-              #self.payoutWorker.finished.connect(self.payoutWorker.deleteLater)
-              #self.payoutThread.finished.connect(self.payoutThread.deleteLater)
               print ("INITIATED PAYOUT")
+            else:
+              self.payoutDone=True
 
 
             return self.goActive()
@@ -388,16 +397,17 @@ class Personality(PersonalitySimple):
         elif self.phACTIVE:
             self.logger.debug('VENDING COMPLETE active')
             if self.vendingStatus:
-              if self.wakereason == self.REASON_UI and self.uievent == 'payoutComplete':
+              if self.wakereason == self.REASON_UI and self.uievent == 'payoutComplete' and not self.payoutDone:
                 self.payoutDone=True
                 self.payoutThread.quit()
                 self.payoutThread.wait(9999999)
                 del self.payoutThread
-            else:
-                self.payoutDone=True
+
+            # "Idle" might have occured before or after payout thread complete!
             if self.wakereason == self.REASON_UI and self.uievent == 'Idle':
               self.idleRequest = True
 
+            # If payout thread AND gui say we're done...
             if self.payoutDone and self.idleRequest:
               print('VENDING FINALLY DONE')
               self.disableTool()

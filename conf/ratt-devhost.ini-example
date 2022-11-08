@@ -368,4 +368,4 @@ VendingConfirm=audio/VendingConfirm.wav
 VendingFailed=audio/VendingFailed.wav
 VendingList=audio/VendingList.wav
 VendingSuccessful=audio/VendingSuccessful.wav
-VendingAcctBalanceLog=audio/VendingAcctBalanceLow.wav
+VendingAcctBalanceLow=audio/VendingAcctBalanceLow.wav
