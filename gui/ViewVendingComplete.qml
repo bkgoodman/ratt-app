@@ -57,7 +57,11 @@ View {
  		if (isFailed) {
 		    sound.vendingSuccessAudio.play();
 		} else {
-		    sound.vendingFailedAudio.play();
+                    if (message.text == "Payment Aborted") {
+		      sound.vendingCanceledAudio.play();
+                    } else {
+		      sound.vendingFailedAudio.play();
+                    }
 		}
 		}
 	}
@@ -75,6 +79,7 @@ View {
 		showTimer.stop();
 		sound.vendingFailedAudio.stop();
 		sound.vendingSuccessAudio.stop();
+		sound.vendingCanceledAudio.stop();
       		status.keyEscLabel = "\u2716"
 		appWindow.uiEvent('Idle'); 
     }

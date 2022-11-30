@@ -76,6 +76,7 @@ View {
       timeoutTimer.start();
       status.keyEscLabel = "\u2716"
       status.keyReturnLabel = "OK"
+      sound.enableAudio.play();
     }
 
     function moneyString(val) {
@@ -97,7 +98,6 @@ View {
       if (pressed ) {
 	      vendingAmount=1;
 	      vendingAmountString = moneyString(vendingAmount)
-	      sound.vendingCanceledAudio.play();
 	      appWindow.uiEvent('VendingAborted'); 
 	}
       return true;
@@ -105,6 +105,7 @@ View {
 
     function keyUp(pressed) {
       if (pressed) {
+        sound.keyAudio.play();
 	if (vendingAmount < vendingMax) {
         vendingAmount += vendingIncrement
 	}
@@ -115,6 +116,7 @@ View {
     }
     function keyDown(pressed) {
      if (pressed) {
+        sound.keyAudio.play();
         vendingAmount -= vendingIncrement
 	if (vendingAmount < vendingMin) {  vendingAmount = vendingMin}
         vendingAmountString = moneyString(vendingAmount)

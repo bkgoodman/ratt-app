@@ -87,6 +87,7 @@ View {
 	if (pressed) { 
 		showTimer.stop();
 		status.keyReturnLabel =  "\u25cf"
+                sound.vendingConfirmAudio.stop();
 	        sound.vendingCanceledAudio.play();
 		appWindow.uiEvent('VendingAborted'); 
 	};
