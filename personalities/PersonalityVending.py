@@ -213,6 +213,7 @@ class Personality(PersonalitySimple):
     STATE_VENDING_INPROGRESS = 'VendingInProgress'
     STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
+    balance=0
     purchaseAmount=0
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
     vendingConfirmData = pyqtSignal(float,float,float, name="vendingConfirmData", arguments=['currentBalance','vendingAmount',"newBalance"])
