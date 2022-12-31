@@ -532,6 +532,7 @@ class RattConfig(QObject):
         self.addConfig('Sound', 'VendingFailed', '')
         self.addConfig('Sound', 'VendingSuccessful', '')
         self.addConfig('Sound', 'VendingList', '')
+        self.addConfig('Sound', 'VendingAcctBalanceLow', '')
 
         self.addSection('Issues')
         for i in self.parser.items('Issues'):
