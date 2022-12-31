@@ -484,6 +484,7 @@ class RattConfig(QObject):
         self.addConfigFloat('Vending', 'Increment',1.0)
         self.addConfig('Vending', 'Payout',"None")
         self.addConfigFloat('Vending', 'PayoutTime',0.5)
+        self.addConfigFloat('Vending', 'ProductCode','')
 
         self.addSection('MQTT')
         self.addConfig('MQTT', 'LogLevel', 'INFO')

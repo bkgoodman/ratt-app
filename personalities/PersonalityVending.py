@@ -53,10 +53,12 @@ class Payout(QObject):
   vendCents=0 # IN CENTS!!
   #payoutComplete = pyqtSignal(name="payoutComplete")
 
+  # Must not return without "payoutComplete"
   def run(self):
       print("\n\n\n*** PAYOUT RUN ****")
       payout = self.parent.app.config.value("Vending.Payout")
       payoutTime = self.parent.app.config.value("Vending.PayoutTime")
+      productCode = self.parent.app.config.value("Vending.ProductCode")
       dollars=0
       quarters=0
       if payout == "Dollars":
@@ -87,6 +89,7 @@ class Payout(QObject):
       self.parent.slotUIEvent("payoutComplete")
 
 # Query Balance
+# MUST NEVER EXIT unless slotUIEvent "VendingError" or "gotBalance"!
 class BalanceWorker(QObject):
     parent = None
 
@@ -121,16 +124,20 @@ class BalanceWorker(QObject):
               except BaseException as e:
                   self.parent.vendingResult="Malformed Response"
                   print ("ERROR BalanceWorker Vend Excetion",e)
+                  self.parent.slotUIEvent("VendingError")
             else:
               self.parent.vendingResult=f"HTTP Error {conn.status_code}"
+              self.parent.slotUIEvent("VendingError")
         except BaseException as e:
             self.parent.vendingResult=str(e)
             print ("BalanceWorker",e,type(e),dir(e))
+            self.parent.slotUIEvent("VendingError")
         #print ("BalanceWorker Emit",self.parent.balance)
         self.parent.gotBalance.emit(self.parent.balance/100)
         self.parent.slotUIEvent("gotBalance")
 
 # Original Payment
+# Must never exit without UISlotEvent  downloadComplete
 class Worker(QObject):
     finished = pyqtSignal()
     downloadComplete = pyqtSignal(name="downloadComplete")
@@ -161,6 +168,9 @@ class Worker(QObject):
             newBalance = (self.parent.balance/100) + self.parent.reupAmount - (self.parent.vendingAmount)
             data = {"lastLog":self.parent.lastLog,"addAmount": int(100*self.parent.reupAmount), "totalCharge":int(100*totalCharge), "prevBalance":self.parent.balance, 
               "serviceFee":(100*surcharge),"purchaseAmt":int(100*self.parent.vendingAmount), "newBalance":int(100*newBalance)}
+            productCode = self.parent.app.config.value("Vending.ProductCode")
+            if productCode is not None and productCode != "":
+              data['productCode'] = productCode
             print ("VENDING REUP REQUEST",data)
             url = f"{url}/reupBalance/{name}"
           else:
@@ -318,6 +328,7 @@ class Personality(PersonalitySimple):
     #############################################
     def stateVendingInProgress(self):
         if self.phENTER:
+            self.logger.debug('VENDING INPROGRESS enter')
             self.thread = QThread()
             self.worker = Worker()
             self.worker.parent=self
@@ -456,6 +467,14 @@ class Personality(PersonalitySimple):
                 self.thread.wait(9999999)
                 del self.thread
                 #self.gotBalance.emit(777)
+            if self.wakereason == self.REASON_UI and self.uievent == 'VendingError':
+                # Should be set self.vendingResult = "Procesing Error"
+                self.vendingStatus = False
+                self.vendingChanged.emit(self.vendingStatus,self.vendingResult)
+                self.thread.quit()
+                self.thread.wait(9999999)
+                del self.thread
+                return self.exitAndGoto(self.STATE_VENDING_COMPLETE)
             if self.wakereason == self.REASON_UI and self.uievent == 'VendingAborted':
                 self.vendingResult = "Payment Aborted"
                 self.vendingStatus = False

@@ -156,10 +156,10 @@ class PersonalityStateMachine(QThread):
             self.mutex.lock()
             self.cond.wait(self.mutex)
 
-            if self.wakereason is self.REASON_UI:
-                self.logger.debug('%s woke up because %s:%s' % (self.stateName(), self.reasonName(), self.uievent))
-            else:
-                self.logger.debug('%s woke up because %s' % (self.stateName(), self.reasonName()))
+            #if self.wakereason is self.REASON_UI:
+            #    self.logger.debug('%s woke up because %s:%s' % (self.stateName(), self.reasonName(), self.uievent))
+            #else:
+            #    self.logger.debug('%s woke up because %s' % (self.stateName(), self.reasonName()))
 
             if self.wakereason is self.REASON_POWER_LOST:
                 self.logger.info('Power loss detected, going to shutdown state.')
