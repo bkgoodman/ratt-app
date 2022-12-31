@@ -120,7 +120,7 @@ class BalanceWorker(QObject):
                   self.parent.lastLog=vendresult['lastLog']
               except BaseException as e:
                   self.parent.vendingResult="Malformed Response"
-                  print ("BalanceWorker Vend Excetion",e)
+                  print ("ERROR BalanceWorker Vend Excetion",e)
             else:
               self.parent.vendingResult=f"HTTP Error {conn.status_code}"
         except BaseException as e:
@@ -214,6 +214,7 @@ class Personality(PersonalitySimple):
     STATE_VENDING_COMPLETE = 'VendingComplete'
     vendingAmount=1
     balance=0
+    lastLog=0
     purchaseAmount=0
     vendingChanged = pyqtSignal(bool, str,name="vendingResult", arguments=['status','result'])
     vendingConfirmData = pyqtSignal(float,float,float, name="vendingConfirmData", arguments=['currentBalance','vendingAmount',"newBalance"])
