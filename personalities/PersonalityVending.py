@@ -125,13 +125,16 @@ class BalanceWorker(QObject):
                   self.parent.vendingResult="Malformed Response"
                   print ("ERROR BalanceWorker Vend Excetion",e)
                   self.parent.slotUIEvent("VendingError")
+                  return
             else:
               self.parent.vendingResult=f"HTTP Error {conn.status_code}"
               self.parent.slotUIEvent("VendingError")
+              return
         except BaseException as e:
             self.parent.vendingResult=str(e)
             print ("BalanceWorker",e,type(e),dir(e))
             self.parent.slotUIEvent("VendingError")
+            return
         #print ("BalanceWorker Emit",self.parent.balance)
         self.parent.gotBalance.emit(self.parent.balance/100)
         self.parent.slotUIEvent("gotBalance")
