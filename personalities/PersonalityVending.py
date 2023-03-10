@@ -117,7 +117,10 @@ class BalanceWorker(QObject):
                 print ("BalanceWorker",vendresult)
                 if vendresult['status'] != 'success':
                   self.parent.vendingResult=vendresult['description']
-                  # TODO HANDLE BALANCE ERROR
+                  self.parent.vendingResult="Bad Result"
+                  print ("Bad Vending Result",vendresult)
+                  self.parent.slotUIEvent("VendingError")
+                  return
                 else:
                   self.parent.balance=vendresult['balance']
                   self.parent.lastLog=vendresult['lastLog']
@@ -132,7 +135,7 @@ class BalanceWorker(QObject):
               return
         except BaseException as e:
             self.parent.vendingResult=str(e)
-            print ("BalanceWorker",e,type(e),dir(e))
+            print ("BalanceWorker BaseException",e,type(e),dir(e))
             self.parent.slotUIEvent("VendingError")
             return
         #print ("BalanceWorker Emit",self.parent.balance)
