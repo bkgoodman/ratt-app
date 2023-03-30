@@ -47,7 +47,7 @@ View {
     property real vendingMin: 0
     property real vendingMax: 10
     property real vendingIncrement: 0.25
-    property int balance: 0
+    property real balance: 0
 
     Connections {
         target: personality
@@ -60,7 +60,7 @@ View {
 	onGotBalance: {
                 // balance
                 balance=currentBalance
-                console.info("GOT CURRENT BALANCE")
+                console.info("GOT CURRENT BALANCE",balance)
 		}
 }
 

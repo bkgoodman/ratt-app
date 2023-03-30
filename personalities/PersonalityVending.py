@@ -122,6 +122,7 @@ class BalanceWorker(QObject):
                   self.parent.slotUIEvent("VendingError")
                   return
                 else:
+                  self.parent.logger.info(f"Balanceworkder {vendresult}")
                   self.parent.balance=vendresult['balance']
                   self.parent.lastLog=vendresult['lastLog']
               except BaseException as e:
@@ -139,7 +140,7 @@ class BalanceWorker(QObject):
             self.parent.slotUIEvent("VendingError")
             return
         #print ("BalanceWorker Emit",self.parent.balance)
-        self.parent.gotBalance.emit(self.parent.balance/100)
+        self.parent.gotBalance.emit(self.parent.balance/100.0)
         self.parent.slotUIEvent("gotBalance")
 
 # Original Payment
@@ -238,7 +239,7 @@ class Personality(PersonalitySimple):
     vendingResult = "Indeterminiate"
     vendingStatus = False
     vendingOp = "none"
-    gotBalance = pyqtSignal(int,name="gotBalance", arguments=['currentBalance'])
+    gotBalance = pyqtSignal(float,name="gotBalance", arguments=['currentBalance'])
     getPurchaseData = pyqtSignal(int,float,name="getPurchaseData", arguments=['currentBalance','currentVendingAmount'])
     VendingConfirmReup = pyqtSignal(float,float,float,float,float,float,name="vendingConfirmReup", arguments=['curBal','thisPurch','svgChg','addAmt','totalChg','newBal'])
 
